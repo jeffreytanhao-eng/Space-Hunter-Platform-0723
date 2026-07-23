@@ -1,0 +1,490 @@
+'use client'
+
+import { useState } from 'react'
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
+import { getGalleryList, applyGallery, downloadOriginal } from '@/services/gallery'
+import { getPosts } from '@/services/posts'
+import { Header } from '@/components/layout/header'
+import { Footer } from '@/components/layout/footer'
+import { Card } from '@/components/ui/card'
+import { Button } from '@/components/ui/button'
+import { Badge } from '@/components/ui/badge'
+import { Avatar } from '@/components/ui/avatar'
+import { Skeleton } from '@/components/ui/skeleton'
+import { Starfield } from '@/components/effects/starfield'
+import { useAuthStore } from '@/stores/auth-store'
+import { format } from 'date-fns'
+import {
+  Search, Filter, ArrowUpDown, Heart, Download, X,
+  ChevronLeft, ChevronRight, Maximize2, Info, Plus,
+  Loader2, Image as ImageIcon, Star, Eye
+} from 'lucide-react'
+
+/* 画廊分类 */
+const categories = [
+  { value: '', label: '全部' },
+  { value: 'deep_sky', label: '深空天体' },
+  { value: 'solar_system', label: '太阳系' },
+  { value: 'starfield', label: '星野' },
+  { value: 'aurora', label: '极光' },
+  { value: 'eclipse', label: '日月食' },
+  { value: 'other', label: '其他' },
+]
+
+/* 荣耀画廊页 */
+export default function GalleryPage() {
+  const queryClient = useQueryClient()
+  const { isAuthenticated } = useAuthStore()
+
+  const [page, setPage] = useState(1)
+  const [category, setCategory] = useState('')
+  const [sort, setSort] = useState<'time' | 'likes'>('time')
+  const [keyword, setKeyword] = useState('')
+  const [searchInput, setSearchInput] = useState('')
+  const pageSize = 12
+
+  /* Lightbox 状态 */
+  const [lightboxIndex, setLightboxIndex] = useState<number | null>(null)
+  const [showFitsMeta, setShowFitsMeta] = useState(false)
+
+  /* 申请弹窗状态 */
+  const [showApplyModal, setShowApplyModal] = useState(false)
+  const [applyTitle, setApplyTitle] = useState('')
+  const [applyDescription, setApplyDescription] = useState('')
+  const [selectedPhotoId, setSelectedPhotoId] = useState('')
+  const [applyStatus, setApplyStatus] = useState<'idle' | 'submitting' | 'success'>('idle')
+
+  /* 画廊列表 */
+  const { data: galleryData, isLoading } = useQuery({
+    queryKey: ['gallery', page, category, sort, keyword],
+    queryFn: () => getGalleryList({ page, pageSize, category: category || undefined, sort, keyword: keyword || undefined }),
+  })
+
+  /* 我的已发布照片（用于申请画廊） */
+  const { data: myPostsData } = useQuery({
+    queryKey: ['myPosts', 'gallery-apply'],
+    queryFn: () => getPosts({ page: 1, pageSize: 50 }),
+    enabled: showApplyModal,
+  })
+
+  /* 申请画廊 */
+  const applyMutation = useMutation({
+    mutationFn: applyGallery,
+    onSuccess: () => {
+      setApplyStatus('success')
+      queryClient.invalidateQueries({ queryKey: ['gallery'] })
+    },
+  })
+
+  const handleSearch = (e: React.FormEvent) => {
+    e.preventDefault()
+    setKeyword(searchInput.trim())
+    setPage(1)
+  }
+
+  const handleApply = () => {
+    if (!selectedPhotoId || !applyTitle.trim()) return
+    applyMutation.mutate({
+      photoId: selectedPhotoId,
+      title: applyTitle.trim(),
+      description: applyDescription.trim() || undefined,
+    })
+  }
+
+  const handleDownload = async (id: string) => {
+    try {
+      const result = await downloadOriginal(id)
+      window.open(result.url, '_blank')
+    } catch {
+      // 下载失败静默处理
+    }
+  }
+
+  const items = galleryData?.items || []
+  const totalPages = galleryData ? Math.ceil(galleryData.total / pageSize) : 1
+
+  return (
+    <div className="flex min-h-screen flex-col">
+      <Header />
+
+      {/* 沉浸式 Hero 区域 */}
+      <div className="relative overflow-hidden">
+        <Starfield />
+        {/* 深空星云渐变装饰 */}
+        <div className="absolute inset-0 bg-gradient-to-b from-nebula-500/10 via-transparent to-space-900" />
+        <div className="absolute inset-0" style={{
+          background: 'radial-gradient(ellipse at 30% 40%, rgba(0,212,255,0.08), transparent 50%), radial-gradient(ellipse at 70% 60%, rgba(179,71,217,0.08), transparent 50%)',
+        }} />
+        <div className="relative mx-auto max-w-7xl px-4 py-16 text-center">
+          <h1 className="text-5xl font-bold text-neon-cyan text-glow-cyan md:text-6xl">
+            荣耀画廊
+          </h1>
+          <p className="mt-3 text-lg text-star-dim">探索宇宙深处，定格星空之美</p>
+        </div>
+      </div>
+
+      {/* 筛选栏 */}
+      <div className="border-b border-space-600 bg-space-800/50 backdrop-blur-sm">
+        <div className="mx-auto max-w-7xl px-4 py-3">
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+            {/* 分类标签 */}
+            <div className="flex gap-1 overflow-x-auto scrollbar-hide">
+              {categories.map((cat) => (
+                <button
+                  key={cat.value}
+                  onClick={() => { setCategory(cat.value); setPage(1) }}
+                  className={`shrink-0 rounded-lg px-3 py-1.5 text-sm transition-colors ${
+                    category === cat.value
+                      ? 'bg-neon-cyan/15 text-neon-cyan border border-neon-cyan/30'
+                      : 'text-star-dim hover:text-star-white hover:bg-space-700'
+                  }`}
+                >
+                  {cat.label}
+                </button>
+              ))}
+            </div>
+
+            <div className="flex items-center gap-3">
+              {/* 排序 */}
+              <button
+                onClick={() => setSort(sort === 'time' ? 'likes' : 'time')}
+                className="flex items-center gap-1.5 rounded-lg border border-space-600 bg-space-700 px-3 py-1.5 text-sm text-star-dim hover:text-star-white transition-colors"
+              >
+                <ArrowUpDown className="h-3.5 w-3.5" />
+                {sort === 'time' ? '最新' : '最热'}
+              </button>
+
+              {/* 搜索 */}
+              <form onSubmit={handleSearch} className="relative">
+                <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-star-dim" />
+                <input
+                  type="text"
+                  value={searchInput}
+                  onChange={(e) => setSearchInput(e.target.value)}
+                  placeholder="搜索画廊..."
+                  className="w-40 rounded-lg border border-space-600 bg-space-700 py-1.5 pl-9 pr-3 text-sm text-star-white placeholder:text-star-dim/60 focus:border-neon-cyan/50 focus:outline-none focus:ring-1 focus:ring-neon-cyan/30 transition-colors"
+                />
+              </form>
+
+              {/* 申请进入画廊 */}
+              {isAuthenticated && (
+                <Button variant="primary" size="sm" onClick={() => setShowApplyModal(true)}>
+                  <Plus className="mr-1 h-3.5 w-3.5" />
+                  申请进入画廊
+                </Button>
+              )}
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* 瀑布流画廊 */}
+      <div className="mx-auto w-full max-w-7xl flex-1 px-4 py-6">
+        {isLoading ? (
+          <div className="columns-1 gap-4 sm:columns-2 lg:columns-3 xl:columns-4">
+            {Array.from({ length: 8 }).map((_, i) => (
+              <div key={i} className="mb-4 break-inside-avoid">
+                <Skeleton className="w-full" style={{ height: `${200 + Math.random() * 200}px` }} />
+              </div>
+            ))}
+          </div>
+        ) : items.length === 0 ? (
+          <div className="py-20 text-center">
+            <ImageIcon className="mx-auto h-12 w-12 text-star-dim/40" />
+            <p className="mt-4 text-star-dim">暂无画廊作品</p>
+          </div>
+        ) : (
+          <div className="columns-1 gap-4 sm:columns-2 lg:columns-3 xl:columns-4">
+            {items.map((item, index) => (
+              <div
+                key={item.id}
+                className="group relative mb-4 cursor-pointer break-inside-avoid overflow-hidden rounded-xl border border-space-600 bg-space-800 transition-all hover:border-neon-cyan/40 hover:shadow-lg hover:shadow-neon-cyan/5"
+                onClick={() => setLightboxIndex(index)}
+              >
+                {/* 图片 */}
+                <img
+                  src={item.imageUrl}
+                  alt={item.title}
+                  className="w-full object-cover transition-transform duration-500 group-hover:scale-105"
+                  loading="lazy"
+                />
+                {/* 悬浮信息层 */}
+                <div className="absolute inset-0 bg-gradient-to-t from-space-900/90 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+                  <div className="absolute bottom-0 left-0 right-0 p-3">
+                    <h3 className="text-sm font-medium text-star-white line-clamp-1">{item.title}</h3>
+                    <div className="mt-1.5 flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <Avatar src={item.authorAvatar} alt={item.authorNickname} size="sm" />
+                        <span className="text-xs text-star-dim">{item.authorNickname}</span>
+                      </div>
+                      <div className="flex items-center gap-2 text-xs text-star-dim">
+                        <span className="flex items-center gap-1">
+                          <Heart className={`h-3 w-3 ${item.isLiked ? 'text-red-400' : ''}`} />
+                          {item.likesCount}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                  {/* 操作按钮 */}
+                  <div className="absolute right-2 top-2 flex gap-1.5">
+                    <button
+                      onClick={(e) => { e.stopPropagation(); handleDownload(item.id) }}
+                      className="rounded-lg bg-space-900/60 p-1.5 text-star-dim hover:text-neon-cyan transition-colors backdrop-blur-sm"
+                    >
+                      <Download className="h-3.5 w-3.5" />
+                    </button>
+                    <button
+                      onClick={(e) => { e.stopPropagation(); setLightboxIndex(index) }}
+                      className="rounded-lg bg-space-900/60 p-1.5 text-star-dim hover:text-neon-cyan transition-colors backdrop-blur-sm"
+                    >
+                      <Maximize2 className="h-3.5 w-3.5" />
+                    </button>
+                  </div>
+                </div>
+                {/* FITS 标记 */}
+                {item.fitsMeta && (
+                  <div className="absolute left-2 top-2">
+                    <Badge variant="purple">FITS</Badge>
+                  </div>
+                )}
+              </div>
+            ))}
+          </div>
+        )}
+
+        {/* 分页 */}
+        {totalPages > 1 && (
+          <div className="flex items-center justify-center gap-2 pt-6">
+            <button
+              onClick={() => setPage(Math.max(1, page - 1))}
+              disabled={page <= 1}
+              className="rounded-lg border border-space-600 bg-space-800 px-3 py-1.5 text-sm text-star-dim hover:text-star-white disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+            >
+              <ChevronLeft className="h-4 w-4" />
+            </button>
+            <span className="text-sm text-star-dim">{page} / {totalPages}</span>
+            <button
+              onClick={() => setPage(Math.min(totalPages, page + 1))}
+              disabled={page >= totalPages}
+              className="rounded-lg border border-space-600 bg-space-800 px-3 py-1.5 text-sm text-star-dim hover:text-star-white disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+            >
+              <ChevronRight className="h-4 w-4" />
+            </button>
+          </div>
+        )}
+      </div>
+
+      {/* Lightbox 大图查看 */}
+      {lightboxIndex !== null && items[lightboxIndex] && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-space-900/95 backdrop-blur-md" onClick={() => { setLightboxIndex(null); setShowFitsMeta(false) }}>
+          <div className="relative flex h-full w-full max-w-6xl flex-col" onClick={(e) => e.stopPropagation()}>
+            {/* 顶部工具栏 */}
+            <div className="flex items-center justify-between px-6 py-3">
+              <div className="flex items-center gap-3">
+                <Avatar src={items[lightboxIndex].authorAvatar} alt={items[lightboxIndex].authorNickname} size="sm" />
+                <div>
+                  <p className="text-sm font-medium text-star-white">{items[lightboxIndex].authorNickname}</p>
+                  <p className="text-xs text-star-dim">{format(new Date(items[lightboxIndex].createdAt), 'yyyy-MM-dd')}</p>
+                </div>
+              </div>
+              <div className="flex items-center gap-2">
+                {items[lightboxIndex].fitsMeta && (
+                  <Button variant="ghost" size="sm" onClick={() => setShowFitsMeta(!showFitsMeta)}>
+                    <Info className="mr-1 h-4 w-4" />
+                    FITS 元数据
+                  </Button>
+                )}
+                <Button variant="ghost" size="sm" onClick={() => handleDownload(items[lightboxIndex].id)}>
+                  <Download className="mr-1 h-4 w-4" />
+                  下载原始文件
+                </Button>
+                <button onClick={() => { setLightboxIndex(null); setShowFitsMeta(false) }} className="rounded-lg p-2 text-star-dim hover:text-star-white transition-colors">
+                  <X className="h-5 w-5" />
+                </button>
+              </div>
+            </div>
+
+            {/* 大图区域 */}
+            <div className="relative flex flex-1 items-center justify-center px-6">
+              {/* 左切换 */}
+              {lightboxIndex > 0 && (
+                <button
+                  onClick={() => { setLightboxIndex(lightboxIndex - 1); setShowFitsMeta(false) }}
+                  className="absolute left-2 z-10 rounded-full bg-space-800/60 p-2 text-star-dim hover:text-star-white backdrop-blur-sm transition-colors"
+                >
+                  <ChevronLeft className="h-6 w-6" />
+                </button>
+              )}
+
+              <img
+                src={items[lightboxIndex].imageUrl}
+                alt={items[lightboxIndex].title}
+                className="max-h-[75vh] max-w-full rounded-lg object-contain"
+              />
+
+              {/* 右切换 */}
+              {lightboxIndex < items.length - 1 && (
+                <button
+                  onClick={() => { setLightboxIndex(lightboxIndex + 1); setShowFitsMeta(false) }}
+                  className="absolute right-2 z-10 rounded-full bg-space-800/60 p-2 text-star-dim hover:text-star-white backdrop-blur-sm transition-colors"
+                >
+                  <ChevronRight className="h-6 w-6" />
+                </button>
+              )}
+            </div>
+
+            {/* 底部信息 */}
+            <div className="px-6 py-3">
+              <h2 className="text-lg font-medium text-star-white">{items[lightboxIndex].title}</h2>
+              {items[lightboxIndex].description && (
+                <p className="mt-1 text-sm text-star-dim">{items[lightboxIndex].description}</p>
+              )}
+              <div className="mt-2 flex items-center gap-4 text-sm text-star-dim">
+                <span className="flex items-center gap-1">
+                  <Heart className={`h-4 w-4 ${items[lightboxIndex].isLiked ? 'text-red-400' : ''}`} />
+                  {items[lightboxIndex].likesCount}
+                </span>
+                <Badge variant="cyan">{categories.find(c => c.value === items[lightboxIndex].category)?.label || items[lightboxIndex].category}</Badge>
+              </div>
+            </div>
+
+            {/* FITS 元数据浮层 */}
+            {showFitsMeta && items[lightboxIndex].fitsMeta && (
+              <div className="absolute right-6 top-16 w-72 rounded-xl border-glow-purple bg-space-800/95 p-4 backdrop-blur-md">
+                <h4 className="mb-3 flex items-center gap-2 text-sm font-medium text-neon-purple">
+                  <Star className="h-4 w-4" />
+                  FITS 元数据
+                </h4>
+                <div className="space-y-2 text-sm">
+                  {items[lightboxIndex].fitsMeta!.object && (
+                    <div className="flex justify-between">
+                      <span className="text-star-dim">天体</span>
+                      <span className="text-star-white">{items[lightboxIndex].fitsMeta!.object}</span>
+                    </div>
+                  )}
+                  {items[lightboxIndex].fitsMeta!.telescope && (
+                    <div className="flex justify-between">
+                      <span className="text-star-dim">望远镜</span>
+                      <span className="text-star-white">{items[lightboxIndex].fitsMeta!.telescope}</span>
+                    </div>
+                  )}
+                  {items[lightboxIndex].fitsMeta!.exposure && (
+                    <div className="flex justify-between">
+                      <span className="text-star-dim">曝光</span>
+                      <span className="text-star-white">{items[lightboxIndex].fitsMeta!.exposure}</span>
+                    </div>
+                  )}
+                  {items[lightboxIndex].fitsMeta!.filter && (
+                    <div className="flex justify-between">
+                      <span className="text-star-dim">滤镜</span>
+                      <span className="text-star-white">{items[lightboxIndex].fitsMeta!.filter}</span>
+                    </div>
+                  )}
+                  {items[lightboxIndex].fitsMeta!.dateObs && (
+                    <div className="flex justify-between">
+                      <span className="text-star-dim">观测日期</span>
+                      <span className="text-star-white">{items[lightboxIndex].fitsMeta!.dateObs}</span>
+                    </div>
+                  )}
+                  {items[lightboxIndex].fitsMeta!.resolution && (
+                    <div className="flex justify-between">
+                      <span className="text-star-dim">分辨率</span>
+                      <span className="text-star-white">{items[lightboxIndex].fitsMeta!.resolution}</span>
+                    </div>
+                  )}
+                  {items[lightboxIndex].fitsMeta!.fileSize && (
+                    <div className="flex justify-between">
+                      <span className="text-star-dim">文件大小</span>
+                      <span className="text-star-white">{(items[lightboxIndex].fitsMeta!.fileSize / 1024 / 1024).toFixed(1)} MB</span>
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* 画廊申请弹窗 */}
+      {showApplyModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-space-900/80 backdrop-blur-sm" onClick={() => setShowApplyModal(false)}>
+          <div className="w-full max-w-lg rounded-xl border-glow-cyan bg-space-800 p-6" onClick={(e) => e.stopPropagation()}>
+            <div className="flex items-center justify-between">
+              <h2 className="text-lg font-medium text-star-white">申请进入画廊</h2>
+              <button onClick={() => setShowApplyModal(false)} className="text-star-dim hover:text-star-white transition-colors">
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+
+            {applyStatus === 'success' ? (
+              <div className="py-8 text-center">
+                <div className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-full bg-neon-cyan/15">
+                  <Star className="h-6 w-6 text-neon-cyan" />
+                </div>
+                <p className="text-star-white">申请已提交，等待审核</p>
+                <p className="mt-1 text-sm text-star-dim">审核通过后作品将展示在画廊中</p>
+                <Button variant="primary" className="mt-4" onClick={() => { setShowApplyModal(false); setApplyStatus('idle'); setApplyTitle(''); setApplyDescription(''); setSelectedPhotoId('') }}>
+                  关闭
+                </Button>
+              </div>
+            ) : (
+              <div className="mt-4 space-y-4">
+                {/* 选择已发布照片 */}
+                <div className="space-y-1.5">
+                  <label className="block text-sm text-star-dim">选择已发布照片</label>
+                  <select
+                    value={selectedPhotoId}
+                    onChange={(e) => setSelectedPhotoId(e.target.value)}
+                    className="w-full rounded-lg border border-space-600 bg-space-700 px-3 py-2 text-sm text-star-white focus:border-neon-cyan/50 focus:outline-none focus:ring-1 focus:ring-neon-cyan/30 transition-colors"
+                  >
+                    <option value="">请选择照片</option>
+                    {myPostsData?.items.filter(p => p.images && p.images.length > 0).map((post) => (
+                      <option key={post.id} value={post.id}>{post.title}</option>
+                    ))}
+                  </select>
+                </div>
+
+                {/* 标题 */}
+                <div className="space-y-1.5">
+                  <label className="block text-sm text-star-dim">标题</label>
+                  <input
+                    type="text"
+                    value={applyTitle}
+                    onChange={(e) => setApplyTitle(e.target.value)}
+                    placeholder="为你的作品起一个标题"
+                    className="w-full rounded-lg border border-space-600 bg-space-700 px-3 py-2 text-sm text-star-white placeholder:text-star-dim/60 focus:border-neon-cyan/50 focus:outline-none focus:ring-1 focus:ring-neon-cyan/30 transition-colors"
+                  />
+                </div>
+
+                {/* 描述 */}
+                <div className="space-y-1.5">
+                  <label className="block text-sm text-star-dim">描述（可选）</label>
+                  <textarea
+                    value={applyDescription}
+                    onChange={(e) => setApplyDescription(e.target.value)}
+                    rows={3}
+                    placeholder="描述你的作品..."
+                    className="w-full rounded-lg border border-space-600 bg-space-700 px-3 py-2 text-sm text-star-white placeholder:text-star-dim/60 focus:border-neon-cyan/50 focus:outline-none focus:ring-1 focus:ring-neon-cyan/30 resize-none transition-colors"
+                  />
+                </div>
+
+                <div className="flex justify-end gap-3">
+                  <Button variant="ghost" onClick={() => setShowApplyModal(false)}>取消</Button>
+                  <Button
+                    onClick={handleApply}
+                    disabled={!selectedPhotoId || !applyTitle.trim() || applyMutation.isPending}
+                  >
+                    {applyMutation.isPending ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
+                    提交申请
+                  </Button>
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
+      <Footer />
+    </div>
+  )
+}

@@ -1,0 +1,10 @@
+fastapi
+uvicorn
+redis
+astropy
+pillow
+numpy
+rawpy
+tifffile
+python-multipart
+cos-python-sdk-v5

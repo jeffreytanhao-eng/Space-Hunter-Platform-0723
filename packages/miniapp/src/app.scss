@@ -1,0 +1,95 @@
+/* 太空猎人 - 全局样式（深空科技感主题） */
+
+/* 主题色变量 */
+page {
+  --color-bg-primary: #0a0e27;
+  --color-bg-secondary: #111640;
+  --color-bg-card: #161b4a;
+  --color-bg-elevated: #1c2259;
+  --color-text-primary: #e2e8f0;
+  --color-text-secondary: #94a3b8;
+  --color-text-muted: #64748b;
+  --color-accent: #818cf8;
+  --color-accent-hover: #6366f1;
+  --color-accent-glow: rgba(129, 140, 248, 0.3);
+  --color-success: #34d399;
+  --color-warning: #fbbf24;
+  --color-error: #f87171;
+  --color-border: rgba(129, 140, 248, 0.15);
+  --color-border-active: rgba(129, 140, 248, 0.4);
+
+  background-color: var(--color-bg-primary);
+  color: var(--color-text-primary);
+  font-family: -apple-system, BlinkMacSystemFont, 'Helvetica Neue', Helvetica,
+    'PingFang SC', 'Microsoft YaHei', Arial, sans-serif;
+  font-size: 28px;
+  line-height: 1.6;
+}
+
+/* 全局通用样式 */
+.container {
+  padding: 24px;
+}
+
+.card {
+  background-color: var(--color-bg-card);
+  border-radius: 16px;
+  padding: 24px;
+  margin-bottom: 20px;
+  border: 1px solid var(--color-border);
+}
+
+.text-primary {
+  color: var(--color-text-primary);
+}
+
+.text-secondary {
+  color: var(--color-text-secondary);
+}
+
+.text-accent {
+  color: var(--color-accent);
+}
+
+/* 按钮基础样式 */
+.btn-primary {
+  background: linear-gradient(135deg, var(--color-accent), var(--color-accent-hover));
+  color: #fff;
+  border: none;
+  border-radius: 12px;
+  padding: 20px 40px;
+  font-size: 28px;
+  text-align: center;
+}
+
+.btn-secondary {
+  background-color: transparent;
+  color: var(--color-accent);
+  border: 1px solid var(--color-accent);
+  border-radius: 12px;
+  padding: 20px 40px;
+  font-size: 28px;
+  text-align: center;
+}
+
+/* 页面占位样式 */
+.page-placeholder {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 80vh;
+  padding: 40px;
+}
+
+.page-placeholder__title {
+  font-size: 36px;
+  font-weight: 600;
+  color: var(--color-text-primary);
+  margin-bottom: 16px;
+}
+
+.page-placeholder__desc {
+  font-size: 28px;
+  color: var(--color-text-secondary);
+}

@@ -1,0 +1,44 @@
+# 太空猎人 - 开发环境 Docker Compose 覆盖配置
+# 使用方式: docker compose -f docker-compose.yml -f docker-compose.dev.yml up
+
+services:
+  # 后端服务 - 挂载源码实现热重载
+  backend:
+    build:
+      context: ./packages/server
+      dockerfile: Dockerfile
+      target: builder
+    command: npm run start:dev
+    volumes:
+      - ./packages/server/src:/app/src
+      - ./packages/server/package.json:/app/package.json
+      - ./packages/server/tsconfig.json:/app/tsconfig.json
+    environment:
+      - APP_ENV=development
+
+  # 前端服务 - 挂载源码实现热重载
+  web:
+    build:
+      context: ./packages/web
+      dockerfile: Dockerfile
+      target: deps
+    command: npm run dev
+    volumes:
+      - ./packages/web/src:/app/src
+      - ./packages/web/package.json:/app/package.json
+      - ./packages/web/next.config.js:/app/next.config.js
+      - ./packages/web/tailwind.config.ts:/app/tailwind.config.ts
+      - ./packages/web/postcss.config.js:/app/postcss.config.js
+      - ./packages/web/tsconfig.json:/app/tsconfig.json
+    environment:
+      - NODE_ENV=development
+
+  # PostgreSQL - 开发环境暴露端口到宿主机
+  postgres:
+    ports:
+      - "5432:5432"
+
+  # Redis - 开发环境暴露端口到宿主机
+  redis:
+    ports:
+      - "6379:6379"

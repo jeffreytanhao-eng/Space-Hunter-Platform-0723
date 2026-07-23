@@ -1,0 +1,212 @@
+.points {
+  min-height: 100vh;
+  background-color: var(--color-bg-primary);
+  display: flex;
+  flex-direction: column;
+
+  &__tabs {
+    display: flex;
+    flex-direction: row;
+    background-color: var(--color-bg-secondary);
+    border-bottom: 1px solid var(--color-border);
+  }
+
+  &__tab {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 24px 0;
+    position: relative;
+
+    &--active {
+      &::after {
+        content: '';
+        position: absolute;
+        bottom: 0;
+        left: 30%;
+        right: 30%;
+        height: 4px;
+        background: linear-gradient(135deg, var(--color-accent), var(--color-accent-hover));
+        border-radius: 2px;
+      }
+    }
+  }
+
+  &__tab-text {
+    font-size: 28px;
+    color: var(--color-text-secondary);
+  }
+
+  &__tab--active &__tab-text {
+    color: var(--color-accent);
+    font-weight: 600;
+  }
+
+  &__balance-section {
+    padding: 40px 24px;
+  }
+
+  &__balance-card {
+    background: linear-gradient(135deg, var(--color-bg-elevated), var(--color-bg-card));
+    border: 1px solid var(--color-border-active);
+    border-radius: 24px;
+    padding: 48px 32px;
+    text-align: center;
+    box-shadow: 0 0 40px var(--color-accent-glow);
+  }
+
+  &__balance-label {
+    display: block;
+    font-size: 28px;
+    color: var(--color-text-secondary);
+    margin-bottom: 16px;
+  }
+
+  &__balance-value {
+    display: block;
+    font-size: 80px;
+    font-weight: 700;
+    color: var(--color-accent);
+    margin-bottom: 16px;
+  }
+
+  &__balance-hint {
+    display: block;
+    font-size: 24px;
+    color: var(--color-text-muted);
+  }
+
+  &__list {
+    flex: 1;
+    padding: 20px 24px;
+    height: calc(100vh - 120px);
+  }
+
+  &__transaction {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+    padding: 24px;
+    background-color: var(--color-bg-card);
+    border: 1px solid var(--color-border);
+    border-radius: 12px;
+    margin-bottom: 12px;
+  }
+
+  &__transaction-info {
+    flex: 1;
+  }
+
+  &__transaction-desc {
+    display: block;
+    font-size: 28px;
+    color: var(--color-text-primary);
+    margin-bottom: 6px;
+  }
+
+  &__transaction-time {
+    font-size: 22px;
+    color: var(--color-text-muted);
+  }
+
+  &__transaction-amount {
+    font-size: 32px;
+    font-weight: 700;
+
+    &--earn {
+      color: var(--color-success);
+    }
+
+    &--spend {
+      color: var(--color-error);
+    }
+  }
+
+  &__rewards-grid {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 16px;
+  }
+
+  &__reward-card {
+    width: calc(50% - 8px);
+    background-color: var(--color-bg-card);
+    border: 1px solid var(--color-border);
+    border-radius: 16px;
+    overflow: hidden;
+  }
+
+  &__reward-image {
+    width: 100%;
+    height: 200px;
+  }
+
+  &__reward-info {
+    padding: 16px;
+  }
+
+  &__reward-name {
+    display: block;
+    font-size: 28px;
+    font-weight: 600;
+    color: var(--color-text-primary);
+    margin-bottom: 6px;
+  }
+
+  &__reward-desc {
+    display: block;
+    font-size: 22px;
+    color: var(--color-text-muted);
+    margin-bottom: 12px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  &__reward-footer {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  &__reward-cost {
+    font-size: 26px;
+    color: var(--color-accent);
+    font-weight: 600;
+  }
+
+  &__reward-btn {
+    padding: 8px 20px;
+    background: linear-gradient(135deg, var(--color-accent), var(--color-accent-hover));
+    border-radius: 8px;
+
+    &--disabled {
+      background: var(--color-bg-elevated);
+      opacity: 0.6;
+    }
+  }
+
+  &__reward-btn-text {
+    font-size: 24px;
+    color: #fff;
+  }
+
+  &__reward-btn--disabled &__reward-btn-text {
+    color: var(--color-text-muted);
+  }
+
+  &__empty {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 120px 0;
+  }
+
+  &__empty-text {
+    font-size: 28px;
+    color: var(--color-text-muted);
+  }
+}

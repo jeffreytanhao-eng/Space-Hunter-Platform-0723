@@ -1,0 +1,95 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* ===== 太空主题 CSS 变量 ===== */
+:root {
+  --color-space-900: #0a0a1a;
+  --color-space-800: #0d1025;
+  --color-space-700: #131636;
+  --color-space-600: #1a1d4a;
+
+  --color-nebula-500: #7c3aed;
+  --color-nebula-400: #8b5cf6;
+  --color-nebula-300: #a78bfa;
+
+  --color-neon-blue: #00d4ff;
+  --color-neon-cyan: #00ffd4;
+  --color-neon-purple: #b347d9;
+
+  --color-star-white: #e8e8ff;
+  --color-star-dim: #8888aa;
+}
+
+/* ===== 基础暗色主题样式 ===== */
+@layer base {
+  body {
+    @apply bg-space-900 text-star-white antialiased;
+    font-feature-settings: "rlig" 1, "calt" 1;
+  }
+
+  ::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+  }
+
+  ::-webkit-scrollbar-track {
+    background: var(--color-space-900);
+  }
+
+  ::-webkit-scrollbar-thumb {
+    background: var(--color-space-600);
+    border-radius: 3px;
+  }
+
+  ::-webkit-scrollbar-thumb:hover {
+    background: var(--color-nebula-500);
+  }
+
+  ::selection {
+    background-color: rgba(0, 212, 255, 0.2);
+    color: var(--color-star-white);
+  }
+}
+
+/* ===== 自定义太空主题工具类 ===== */
+@layer utilities {
+  .glow-blue {
+    box-shadow: 0 0 8px rgba(0, 212, 255, 0.4), 0 0 24px rgba(0, 212, 255, 0.1);
+  }
+
+  .glow-cyan {
+    box-shadow: 0 0 8px rgba(0, 255, 212, 0.4), 0 0 24px rgba(0, 255, 212, 0.1);
+  }
+
+  .glow-purple {
+    box-shadow: 0 0 8px rgba(179, 71, 217, 0.4), 0 0 24px rgba(179, 71, 217, 0.1);
+  }
+
+  .border-glow-blue {
+    border: 1px solid rgba(0, 212, 255, 0.3);
+    box-shadow: 0 0 8px rgba(0, 212, 255, 0.15), inset 0 0 8px rgba(0, 212, 255, 0.05);
+  }
+
+  .border-glow-cyan {
+    border: 1px solid rgba(0, 255, 212, 0.3);
+    box-shadow: 0 0 8px rgba(0, 255, 212, 0.15), inset 0 0 8px rgba(0, 255, 212, 0.05);
+  }
+
+  .border-glow-purple {
+    border: 1px solid rgba(179, 71, 217, 0.3);
+    box-shadow: 0 0 8px rgba(179, 71, 217, 0.15), inset 0 0 8px rgba(179, 71, 217, 0.05);
+  }
+
+  .text-glow-blue {
+    text-shadow: 0 0 8px rgba(0, 212, 255, 0.6);
+  }
+
+  .text-glow-cyan {
+    text-shadow: 0 0 8px rgba(0, 255, 212, 0.6);
+  }
+
+  .text-glow-purple {
+    text-shadow: 0 0 8px rgba(179, 71, 217, 0.6);
+  }
+}

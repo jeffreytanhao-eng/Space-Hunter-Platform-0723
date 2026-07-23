@@ -1,0 +1,33 @@
+{
+  "name": "@space-hunter/miniapp",
+  "version": "0.1.0",
+  "private": true,
+  "description": "太空猎人 - 微信小程序",
+  "templateInfo": {
+    "name": "default",
+    "typescript": true,
+    "css": "scss"
+  },
+  "scripts": {
+    "build:weapp": "taro build --type weapp",
+    "dev:weapp": "taro build --type weapp --watch",
+    "lint": "eslint src --ext .ts,.tsx"
+  },
+  "dependencies": {
+    "@tarojs/cli": "^4.0.0",
+    "@tarojs/components": "^4.0.0",
+    "@tarojs/runtime": "^4.0.0",
+    "@tarojs/taro": "^4.0.0",
+    "@tarojs/plugin-framework-react": "^4.0.0",
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0"
+  },
+  "devDependencies": {
+    "typescript": "^5.3.0",
+    "@types/react": "^18.2.0",
+    "@tarojs/webpack5-runner": "^4.0.0",
+    "@tarojs/webpack5-prebundle": "^4.0.0",
+    "babel-preset-taro": "^4.0.0",
+    "eslint": "^8.56.0"
+  }
+}

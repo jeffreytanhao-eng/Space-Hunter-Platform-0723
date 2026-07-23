@@ -1,0 +1,185 @@
+.login {
+  min-height: 100vh;
+  background-color: var(--color-bg-primary);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 0 48px;
+  position: relative;
+  overflow: hidden;
+
+  // 深空背景装饰
+  &__stars {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: radial-gradient(ellipse at 50% 0%, rgba(129, 140, 248, 0.08) 0%, transparent 60%);
+    pointer-events: none;
+  }
+
+  &__header {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    margin-top: 160px;
+    margin-bottom: 80px;
+    position: relative;
+    z-index: 1;
+  }
+
+  &__logo {
+    width: 140px;
+    height: 140px;
+    border-radius: 36px;
+    background: linear-gradient(135deg, var(--color-accent), var(--color-accent-hover));
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 32px;
+    box-shadow: 0 0 40px var(--color-accent-glow);
+  }
+
+  &__logo-text {
+    font-size: 64px;
+  }
+
+  &__title {
+    font-size: 48px;
+    font-weight: 700;
+    color: var(--color-text-primary);
+    margin-bottom: 12px;
+  }
+
+  &__subtitle {
+    font-size: 28px;
+    color: var(--color-text-secondary);
+  }
+
+  &__section {
+    width: 100%;
+    position: relative;
+    z-index: 1;
+  }
+
+  &__wx-btn {
+    width: 100%;
+    height: 96px;
+    border-radius: 16px;
+    background-color: #07c160 !important;
+    border: none;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  &__wx-btn-text {
+    color: #fff;
+    font-size: 32px;
+    font-weight: 600;
+  }
+
+  &__divider {
+    display: flex;
+    align-items: center;
+    margin: 48px 0;
+    width: 100%;
+    position: relative;
+    z-index: 1;
+  }
+
+  &__divider-line {
+    flex: 1;
+    height: 1px;
+    background-color: var(--color-border);
+  }
+
+  &__divider-text {
+    padding: 0 24px;
+    font-size: 24px;
+    color: var(--color-text-muted);
+    white-space: nowrap;
+  }
+
+  &__form {
+    width: 100%;
+    position: relative;
+    z-index: 1;
+  }
+
+  &__input-group {
+    display: flex;
+    align-items: center;
+    margin-bottom: 24px;
+    background-color: var(--color-bg-card);
+    border: 1px solid var(--color-border);
+    border-radius: 16px;
+    overflow: hidden;
+
+    &--code {
+      display: flex;
+      flex-direction: row;
+    }
+  }
+
+  &__input {
+    flex: 1;
+    height: 96px;
+    padding: 0 28px;
+    font-size: 30px;
+    color: var(--color-text-primary);
+    background-color: transparent;
+
+    &--code {
+      flex: 1;
+    }
+  }
+
+  &__code-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0 24px;
+    height: 96px;
+    background-color: transparent;
+    border-left: 1px solid var(--color-border);
+
+    &--disabled {
+      opacity: 0.5;
+    }
+  }
+
+  &__code-btn-text {
+    font-size: 26px;
+    color: var(--color-accent);
+    white-space: nowrap;
+  }
+
+  &__submit-btn {
+    width: 100%;
+    height: 96px;
+    border-radius: 16px;
+    background: linear-gradient(135deg, var(--color-accent), var(--color-accent-hover)) !important;
+    color: #fff !important;
+    font-size: 32px;
+    font-weight: 600;
+    border: none;
+    margin-top: 16px;
+  }
+
+  &__footer {
+    position: absolute;
+    bottom: 80px;
+    left: 0;
+    right: 0;
+    display: flex;
+    justify-content: center;
+    z-index: 1;
+  }
+
+  &__agreement {
+    font-size: 22px;
+    color: var(--color-text-muted);
+  }
+}

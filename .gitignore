@@ -1,0 +1,47 @@
+# 依赖
+node_modules/
+
+# 构建产物
+dist/
+build/
+
+# 环境变量
+.env
+.env.local
+.env.*.local
+
+# 日志
+*.log
+npm-debug.log*
+
+# 系统文件
+.DS_Store
+Thumbs.db
+
+# 测试覆盖率
+coverage/
+
+# Next.js
+.next/
+out/
+
+# Taro 小程序
+.taro/
+.temp/
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+venv/
+
+# Graphify
+graphify-out/
+.graphify_*

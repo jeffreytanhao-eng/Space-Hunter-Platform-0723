@@ -1,0 +1,18 @@
+{
+  "miniprogramRoot": "dist/",
+  "projectname": "space-hunter",
+  "description": "太空猎人 - 天文社区微信小程序",
+  "appid": "wx0000000000000000",
+  "setting": {
+    "urlCheck": false,
+    "es6": false,
+    "enhance": false,
+    "compileHotReLoad": false,
+    "postcss": false,
+    "minified": false,
+    "nodeModules": true,
+    "bigPackageSizeSupport": true
+  },
+  "compileType": "miniprogram",
+  "condition": {}
+}
