@@ -139,6 +139,6 @@ graphify-out/GRAPH_REPORT.md
 
 图谱包含 1101 个节点、2110 条边、107 个社区，post-commit hook 会在每次提交后自动更新。
 
-## 许可证
+## 版权声明
 
-MIT
+All Rights Reserved. 未经授权，不得用于任何商业用途。
