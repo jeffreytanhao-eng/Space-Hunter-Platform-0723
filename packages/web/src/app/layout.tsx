@@ -2,6 +2,7 @@ import type { Metadata } from 'next'
 import { Inter } from 'next/font/google'
 import './globals.css'
 import { Providers } from '@/components/providers'
+import { LocaleInitializer } from '@/components/locale-initializer'
 
 const inter = Inter({ subsets: ['latin'], variable: '--font-inter' })
 
@@ -18,7 +19,10 @@ export default function RootLayout({
   return (
     <html lang="zh-CN" className={inter.variable}>
       <body className="min-h-screen bg-space-900 font-sans">
-        <Providers>{children}</Providers>
+        <Providers>
+          <LocaleInitializer />
+          {children}
+        </Providers>
       </body>
     </html>
   )

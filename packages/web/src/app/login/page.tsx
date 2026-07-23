@@ -1,9 +1,10 @@
-'use client'
+﻿'use client'
 
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { useAuthStore } from '@/stores/auth-store'
+import { useTranslation } from '@/lib/i18n'
 import { sendSmsCode } from '@/services/auth'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -21,6 +22,7 @@ export default function LoginPage() {
   const [loading, setLoading] = useState(false)
   const [sendingCode, setSendingCode] = useState(false)
   const [error, setError] = useState('')
+  const { t } = useTranslation()
 
   /* 已登录则跳转首页 */
   useEffect(() => {
@@ -39,7 +41,7 @@ export default function LoginPage() {
   /* 发送验证码 */
   const handleSendCode = async () => {
     if (!phone || phone.length !== 11) {
-      setError('请输入正确的手机号')
+      setError(t('login.invalidPhone'))
       return
     }
     setError('')
@@ -48,7 +50,7 @@ export default function LoginPage() {
       await sendSmsCode(phone)
       setCountdown(60)
     } catch (err: unknown) {
-      const msg = err instanceof Error ? err.message : '发送验证码失败，请稍后重试'
+      const msg = err instanceof Error ? err.message : t('login.sendCodeFailed')
       setError(msg)
     } finally {
       setSendingCode(false)
@@ -59,7 +61,7 @@ export default function LoginPage() {
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault()
     if (!phone || !code) {
-      setError('请填写手机号和验证码')
+      setError(t('login.fillRequired'))
       return
     }
     setError('')
@@ -68,7 +70,7 @@ export default function LoginPage() {
       await login(phone, code)
       router.replace('/')
     } catch (err: unknown) {
-      const msg = err instanceof Error ? err.message : '登录失败，请检查验证码是否正确'
+      const msg = err instanceof Error ? err.message : t('login.loginFailed')
       setError(msg)
     } finally {
       setLoading(false)
@@ -83,22 +85,22 @@ export default function LoginPage() {
       <div className="relative w-full max-w-md rounded-2xl border-glow-blue bg-space-800 p-8">
         {/* 标题 */}
         <div className="mb-8 text-center">
-          <h1 className="text-3xl font-bold text-neon-blue text-glow-blue">太空猎人</h1>
-          <p className="mt-2 text-sm text-star-dim">探索宇宙，分享星空</p>
+          <h1 className="text-3xl font-bold text-neon-blue text-glow-blue">{t('login.title')}</h1>
+          <p className="mt-2 text-sm text-star-dim">{t('login.subtitle')}</p>
         </div>
 
         {/* 登录表单 */}
         <form onSubmit={handleLogin} className="space-y-5">
           {/* 手机号 */}
           <div className="space-y-1.5">
-            <label className="block text-sm text-star-dim">手机号</label>
+            <label className="block text-sm text-star-dim">{t('login.phoneLabel')}</label>
             <div className="relative">
               <Phone className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-star-dim" />
               <input
                 type="tel"
                 value={phone}
                 onChange={(e) => setPhone(e.target.value.replace(/\D/g, '').slice(0, 11))}
-                placeholder="请输入手机号"
+                placeholder={t('login.phonePlaceholder')}
                 maxLength={11}
                 className="w-full rounded-lg border border-space-600 bg-space-700 py-2.5 pl-10 pr-3 text-sm text-star-white placeholder:text-star-dim/60 focus:border-neon-blue/50 focus:outline-none focus:ring-1 focus:ring-neon-blue/30 transition-colors"
               />
@@ -107,7 +109,7 @@ export default function LoginPage() {
 
           {/* 验证码 */}
           <div className="space-y-1.5">
-            <label className="block text-sm text-star-dim">验证码</label>
+            <label className="block text-sm text-star-dim">{t('login.codeLabel')}</label>
             <div className="flex gap-3">
               <div className="relative flex-1">
                 <Shield className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-star-dim" />
@@ -115,7 +117,7 @@ export default function LoginPage() {
                   type="text"
                   value={code}
                   onChange={(e) => setCode(e.target.value.replace(/\D/g, '').slice(0, 6))}
-                  placeholder="请输入验证码"
+                  placeholder={t('login.codePlaceholder')}
                   maxLength={6}
                   className="w-full rounded-lg border border-space-600 bg-space-700 py-2.5 pl-10 pr-3 text-sm text-star-white placeholder:text-star-dim/60 focus:border-neon-blue/50 focus:outline-none focus:ring-1 focus:ring-neon-blue/30 transition-colors"
                 />
@@ -128,7 +130,7 @@ export default function LoginPage() {
                 onClick={handleSendCode}
                 className="shrink-0 whitespace-nowrap"
               >
-                {sendingCode ? '发送中...' : countdown > 0 ? `${countdown}s` : '获取验证码'}
+                {sendingCode ? t('login.sending') : countdown > 0 ? `${countdown}s` : t('login.sendCode')}
               </Button>
             </div>
           </div>
@@ -147,7 +149,7 @@ export default function LoginPage() {
             disabled={loading || !phone || !code}
             className="w-full"
           >
-            {loading ? '登录中...' : '登录'}
+            {loading ? t('login.loggingIn') : t('login.loginBtn')}
           </Button>
         </form>
 
@@ -157,23 +159,23 @@ export default function LoginPage() {
             <div className="absolute inset-0 flex items-center">
               <div className="w-full border-t border-space-600" />
             </div>
-            <span className="relative bg-space-800 px-3 text-xs text-star-dim">其他登录方式</span>
+            <span className="relative bg-space-800 px-3 text-xs text-star-dim">{t('login.otherLogin')}</span>
           </div>
           <button
             type="button"
             className="mt-4 flex w-full items-center justify-center gap-2 rounded-lg border border-green-500/30 bg-green-500/10 py-2.5 text-sm text-green-400 hover:bg-green-500/20 transition-colors"
-            onClick={() => setError('微信登录暂未开放，请使用手机号登录')}
+            onClick={() => setError(t('login.wechatNotAvailable'))}
           >
             <MessageSquare className="h-4 w-4" />
-            微信扫码登录
+            {t('login.wechatLogin')}
           </button>
         </div>
 
         {/* 注册链接 */}
         <p className="mt-6 text-center text-sm text-star-dim">
-          还没有账号？{' '}
+          {t('login.noAccount')}{' '}
           <Link href="/register" className="text-neon-blue hover:underline">
-            立即注册
+            {t('login.goRegister')}
           </Link>
         </p>
       </div>

@@ -1,4 +1,4 @@
-'use client'
+﻿'use client'
 
 import { useState, useEffect, Suspense } from 'react'
 import { useSearchParams } from 'next/navigation'
@@ -17,6 +17,7 @@ import { Starfield } from '@/components/effects/starfield'
 import { useAuthStore } from '@/stores/auth-store'
 import { format } from 'date-fns'
 import { Heart, MessageCircle, Search, Plus, ChevronLeft, ChevronRight } from 'lucide-react'
+import { useTranslation } from '@/lib/i18n'
 
 /* 论坛首页内容 */
 function HomeContent() {
@@ -29,6 +30,8 @@ function HomeContent() {
   const [activeSection, setActiveSection] = useState(sectionId || '')
   const [searchValue, setSearchValue] = useState(keyword || '')
   const pageSize = 10
+
+  const { t } = useTranslation()
 
   const { isAuthenticated } = useAuthStore()
 
@@ -67,9 +70,9 @@ function HomeContent() {
         <Starfield />
         <div className="relative mx-auto max-w-7xl px-4 py-16 text-center">
           <h1 className="text-5xl font-bold text-neon-blue text-glow-blue md:text-6xl">
-            太空猎人
+            {t('home.heroTitle')}
           </h1>
-          <p className="mt-3 text-lg text-star-dim">探索宇宙，分享星空 — 天文爱好者的深空社区</p>
+          <p className="mt-3 text-lg text-star-dim">{t('home.heroSubtitle')}</p>
           {/* 搜索框 */}
           <form
             onSubmit={(e) => {
@@ -86,7 +89,7 @@ function HomeContent() {
                 type="text"
                 value={searchValue}
                 onChange={(e) => setSearchValue(e.target.value)}
-                placeholder="搜索帖子、标签、天文话题..."
+                placeholder={t('home.searchPlaceholder')}
                 className="w-full rounded-xl border border-space-600 bg-space-800/80 py-3 pl-12 pr-4 text-sm text-star-white placeholder:text-star-dim/60 focus:border-neon-blue/50 focus:outline-none focus:ring-1 focus:ring-neon-blue/30 backdrop-blur-sm transition-colors"
               />
             </div>
@@ -106,7 +109,7 @@ function HomeContent() {
                   : 'text-star-dim hover:text-star-white hover:bg-space-700'
               }`}
             >
-              全部
+              {t('home.allSections')}
             </button>
             {sections?.map((section) => (
               <button
@@ -147,7 +150,7 @@ function HomeContent() {
             ))
           ) : postsData?.items.length === 0 ? (
             <div className="py-20 text-center">
-              <p className="text-star-dim">暂无帖子，快来发布第一篇吧！</p>
+              <p className="text-star-dim">{t('home.noPosts')}</p>
             </div>
           ) : (
             postsData?.items.map((post) => (

@@ -1,4 +1,4 @@
-'use client'
+﻿'use client'
 
 import { useState } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
@@ -12,6 +12,7 @@ import { Avatar } from '@/components/ui/avatar'
 import { Skeleton } from '@/components/ui/skeleton'
 import { useAuthStore } from '@/stores/auth-store'
 import { format } from 'date-fns'
+import { useTranslation } from '@/lib/i18n'
 import {
   Calendar, MapPin, Users, Clock, Globe, Building2,
   ChevronLeft, ChevronRight, Search, Plus, Star,
@@ -21,12 +22,13 @@ import Link from 'next/link'
 
 /* 活动状态标签 */
 function StatusBadge({ status }: { status: string }) {
+  const { t } = useTranslation()
   const config: Record<string, { variant: 'blue' | 'cyan' | 'purple' | 'default'; label: string }> = {
-    pending: { variant: 'default', label: '待审核' },
+    pending: { variant: 'default', label: t('events.pending') },
     approved: { variant: 'blue', label: '已通过' },
     rejected: { variant: 'default', label: '已拒绝' },
     ongoing: { variant: 'cyan', label: '进行中' },
-    ended: { variant: 'default', label: '已结束' },
+    ended: { variant: 'default', label: t('events.ended') },
   }
   const c = config[status] || config.pending
   return <Badge variant={c.variant}>{c.label}</Badge>
@@ -34,6 +36,7 @@ function StatusBadge({ status }: { status: string }) {
 
 /* 活动页 */
 export default function EventsPage() {
+  const { t } = useTranslation()
   const queryClient = useQueryClient()
   const { isAuthenticated } = useAuthStore()
 
@@ -86,14 +89,14 @@ export default function EventsPage() {
         {/* 标题与操作 */}
         <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <div>
-            <h1 className="text-3xl font-bold text-star-white">活动</h1>
-            <p className="mt-1 text-sm text-star-dim">参与天文观测活动，与同好一起探索星空</p>
+            <h1 className="text-3xl font-bold text-star-white">{t('events.title')}</h1>
+            <p className="mt-1 text-sm text-star-dim">{t('events.subtitle')}</p>
           </div>
           {isAuthenticated && (
             <Link href="/events/new">
               <Button variant="primary">
                 <Plus className="mr-2 h-4 w-4" />
-                创建活动
+                {t('events.createBtn')}
               </Button>
             </Link>
           )}
@@ -110,7 +113,7 @@ export default function EventsPage() {
                   : 'text-star-dim hover:text-star-white hover:bg-space-700'
               }`}
             >
-              全部活动
+              {t('events.allEvents')}
             </button>
             {isAuthenticated && (
               <button
@@ -121,7 +124,7 @@ export default function EventsPage() {
                     : 'text-star-dim hover:text-star-white hover:bg-space-700'
                 }`}
               >
-                我的活动
+                {t('events.myEvents')}
               </button>
             )}
           </div>
@@ -132,7 +135,7 @@ export default function EventsPage() {
               type="text"
               value={searchInput}
               onChange={(e) => setSearchInput(e.target.value)}
-              placeholder="搜索活动..."
+              placeholder={t('events.searchPlaceholder')}
               className="w-56 rounded-lg border border-space-600 bg-space-800 py-1.5 pl-9 pr-3 text-sm text-star-white placeholder:text-star-dim/60 focus:border-neon-blue/50 focus:outline-none focus:ring-1 focus:ring-neon-blue/30 transition-colors"
             />
           </form>
@@ -154,7 +157,7 @@ export default function EventsPage() {
           ) : items.length === 0 ? (
             <div className="py-20 text-center">
               <Calendar className="mx-auto h-12 w-12 text-star-dim/40" />
-              <p className="mt-4 text-star-dim">暂无活动</p>
+              <p className="mt-4 text-star-dim">{t('events.noEvents')}</p>
             </div>
           ) : (
             <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
@@ -166,7 +169,7 @@ export default function EventsPage() {
                       {event.isOfficial && (
                         <Badge variant="purple">
                           <Star className="mr-1 h-3 w-3" />
-                          官方
+                          {t('events.official')}
                         </Badge>
                       )}
                       <StatusBadge status={event.status} />
@@ -197,7 +200,7 @@ export default function EventsPage() {
                     </div>
                     <div className="flex items-center gap-2">
                       <Users className="h-4 w-4 shrink-0" />
-                      <span>{event.currentParticipants}/{event.maxParticipants} 人</span>
+                      <span>{event.currentParticipants}/{event.maxParticipants}</span>
                     </div>
                   </div>
 
@@ -213,7 +216,7 @@ export default function EventsPage() {
                           onClick={() => cancelMutation.mutate(event.id)}
                         >
                           {cancelMutation.isPending ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <CheckCircle className="mr-2 h-4 w-4" />}
-                          已报名 · 取消
+                          {t('events.signedUp')}
                         </Button>
                       ) : (
                         <Button
@@ -224,12 +227,12 @@ export default function EventsPage() {
                           onClick={() => signupMutation.mutate(event.id)}
                         >
                           {signupMutation.isPending ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
-                          {event.currentParticipants >= event.maxParticipants ? '已满员' : '立即报名'}
+                          {event.currentParticipants >= event.maxParticipants ? t('events.full') : t('events.signup')}
                         </Button>
                       )
                     ) : (
                       <Button variant="secondary" size="sm" className="w-full" disabled>
-                        {event.status === 'ended' ? '已结束' : event.status === 'pending' ? '待审核' : '不可报名'}
+                        {event.status === 'ended' ? t('events.ended') : event.status === 'pending' ? t('events.pending') : t('events.cannotSignup')}
                       </Button>
                     )}
                   </div>

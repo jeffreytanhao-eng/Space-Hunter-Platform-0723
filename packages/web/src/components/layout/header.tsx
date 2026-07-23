@@ -4,6 +4,8 @@ import { useState, useRef, useEffect } from 'react'
 import Link from 'next/link'
 import { useAuthStore } from '@/stores/auth-store'
 import { Avatar } from '@/components/ui/avatar'
+import { LanguageSwitcher } from '@/components/ui/language-switcher'
+import { useTranslation } from '@/lib/i18n'
 import { Search, ChevronDown, LogOut, User, Coins, Menu, X } from 'lucide-react'
 
 /* 顶部导航栏 */
@@ -13,6 +15,7 @@ export function Header() {
   const [showMobileMenu, setShowMobileMenu] = useState(false)
   const [searchValue, setSearchValue] = useState('')
   const dropdownRef = useRef<HTMLDivElement>(null)
+  const { t } = useTranslation()
 
   /* 点击外部关闭下拉菜单 */
   useEffect(() => {
@@ -38,14 +41,14 @@ export function Header() {
         {/* Logo */}
         <div className="flex items-center gap-6">
           <Link href="/" className="flex items-center gap-2">
-            <span className="text-lg font-bold text-neon-blue text-glow-blue">太空猎人</span>
+            <span className="text-lg font-bold text-neon-blue text-glow-blue">{t('home.heroTitle')}</span>
           </Link>
           {/* 桌面端导航 */}
           <nav className="hidden items-center gap-6 text-sm md:flex">
-            <Link href="/" className="text-star-dim hover:text-star-white transition-colors">首页</Link>
-            <Link href="/gallery" className="text-star-dim hover:text-star-white transition-colors">画廊</Link>
-            <Link href="/events" className="text-star-dim hover:text-star-white transition-colors">活动</Link>
-            <Link href="/points" className="text-star-dim hover:text-star-white transition-colors">积分</Link>
+            <Link href="/" className="text-star-dim hover:text-star-white transition-colors">{t('nav.home')}</Link>
+            <Link href="/gallery" className="text-star-dim hover:text-star-white transition-colors">{t('nav.gallery')}</Link>
+            <Link href="/events" className="text-star-dim hover:text-star-white transition-colors">{t('nav.events')}</Link>
+            <Link href="/points" className="text-star-dim hover:text-star-white transition-colors">{t('nav.points')}</Link>
           </nav>
         </div>
 
@@ -57,7 +60,7 @@ export function Header() {
               type="text"
               value={searchValue}
               onChange={(e) => setSearchValue(e.target.value)}
-              placeholder="搜索帖子、标签..."
+              placeholder={t('nav.searchPlaceholder')}
               className="w-full rounded-lg border border-space-600 bg-space-800 py-1.5 pl-9 pr-3 text-sm text-star-white placeholder:text-star-dim/60 focus:border-neon-blue/50 focus:outline-none focus:ring-1 focus:ring-neon-blue/30 transition-colors"
             />
           </div>
@@ -84,7 +87,7 @@ export function Header() {
                     onClick={() => setShowDropdown(false)}
                   >
                     <User className="h-4 w-4" />
-                    个人中心
+                    {t('nav.profile')}
                   </Link>
                   <Link
                     href="/points"
@@ -92,7 +95,7 @@ export function Header() {
                     onClick={() => setShowDropdown(false)}
                   >
                     <Coins className="h-4 w-4" />
-                    积分中心
+                    {t('nav.pointsCenter')}
                   </Link>
                   <div className="my-1 border-t border-space-600" />
                   <button
@@ -103,24 +106,25 @@ export function Header() {
                     className="flex w-full items-center gap-2 px-4 py-2 text-sm text-star-dim hover:bg-space-700 hover:text-red-400 transition-colors"
                   >
                     <LogOut className="h-4 w-4" />
-                    登出
+                    {t('nav.logout')}
                   </button>
                 </div>
               )}
             </div>
           ) : (
             <div className="flex items-center gap-2">
+              <LanguageSwitcher />
               <Link
                 href="/login"
                 className="rounded-lg px-3 py-1.5 text-sm text-star-dim hover:text-star-white transition-colors"
               >
-                登录
+                {t('nav.login')}
               </Link>
               <Link
                 href="/register"
                 className="rounded-lg bg-neon-blue/10 px-3 py-1.5 text-sm text-neon-blue border border-neon-blue/30 hover:bg-neon-blue/20 transition-colors"
               >
-                注册
+                {t('nav.register')}
               </Link>
             </div>
           )}
@@ -145,16 +149,16 @@ export function Header() {
                 type="text"
                 value={searchValue}
                 onChange={(e) => setSearchValue(e.target.value)}
-                placeholder="搜索帖子、标签..."
+                placeholder={t('nav.searchPlaceholder')}
                 className="w-full rounded-lg border border-space-600 bg-space-700 py-2 pl-9 pr-3 text-sm text-star-white placeholder:text-star-dim/60 focus:border-neon-blue/50 focus:outline-none"
               />
             </div>
           </form>
           <nav className="flex flex-col gap-1">
-            <Link href="/" className="rounded-lg px-3 py-2 text-sm text-star-dim hover:bg-space-700 hover:text-star-white" onClick={() => setShowMobileMenu(false)}>首页</Link>
-            <Link href="/gallery" className="rounded-lg px-3 py-2 text-sm text-star-dim hover:bg-space-700 hover:text-star-white" onClick={() => setShowMobileMenu(false)}>画廊</Link>
-            <Link href="/events" className="rounded-lg px-3 py-2 text-sm text-star-dim hover:bg-space-700 hover:text-star-white" onClick={() => setShowMobileMenu(false)}>活动</Link>
-            <Link href="/points" className="rounded-lg px-3 py-2 text-sm text-star-dim hover:bg-space-700 hover:text-star-white" onClick={() => setShowMobileMenu(false)}>积分</Link>
+            <Link href="/" className="rounded-lg px-3 py-2 text-sm text-star-dim hover:bg-space-700 hover:text-star-white" onClick={() => setShowMobileMenu(false)}>{t('nav.home')}</Link>
+            <Link href="/gallery" className="rounded-lg px-3 py-2 text-sm text-star-dim hover:bg-space-700 hover:text-star-white" onClick={() => setShowMobileMenu(false)}>{t('nav.gallery')}</Link>
+            <Link href="/events" className="rounded-lg px-3 py-2 text-sm text-star-dim hover:bg-space-700 hover:text-star-white" onClick={() => setShowMobileMenu(false)}>{t('nav.events')}</Link>
+            <Link href="/points" className="rounded-lg px-3 py-2 text-sm text-star-dim hover:bg-space-700 hover:text-star-white" onClick={() => setShowMobileMenu(false)}>{t('nav.points')}</Link>
           </nav>
         </div>
       )}

@@ -1,4 +1,4 @@
-'use client'
+﻿'use client'
 
 import { useState } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
@@ -11,6 +11,7 @@ import { Badge } from '@/components/ui/badge'
 import { Skeleton } from '@/components/ui/skeleton'
 import { useAuthStore } from '@/stores/auth-store'
 import { format } from 'date-fns'
+import { useTranslation } from '@/lib/i18n'
 import {
   Coins, TrendingUp, TrendingDown, Gift,
   ChevronLeft, ChevronRight, Loader2, Sparkles
@@ -18,6 +19,7 @@ import {
 
 /* 积分中心页 */
 export default function PointsPage() {
+  const { t } = useTranslation()
   const queryClient = useQueryClient()
   const { isAuthenticated } = useAuthStore()
 
@@ -74,9 +76,9 @@ export default function PointsPage() {
       <div className="flex min-h-screen flex-col">
         <Header />
         <main className="mx-auto flex-1 px-4 py-20 text-center">
-          <p className="text-star-dim">请先登录查看积分</p>
+          <p className="text-star-dim">{t('points.notLoggedIn')}</p>
           <Button variant="primary" className="mt-4" onClick={() => (window.location.href = '/login')}>
-            去登录
+            {t('points.goToLogin')}
           </Button>
         </main>
         <Footer />
@@ -92,7 +94,7 @@ export default function PointsPage() {
         {/* 积分余额 */}
         <Card glowColor="blue" className="mb-6 text-center">
           <div className="py-4">
-            <p className="text-sm text-star-dim">当前积分</p>
+            <p className="text-sm text-star-dim">{t('points.balance')}</p>
             {balanceLoading ? (
               <Skeleton className="mx-auto mt-2 h-16 w-40" />
             ) : (
@@ -100,7 +102,7 @@ export default function PointsPage() {
                 {balance.toLocaleString()}
               </p>
             )}
-            <p className="mt-2 text-sm text-star-dim">继续探索宇宙，赚取更多积分</p>
+            <p className="mt-2 text-sm text-star-dim">{t('points.balanceHint')}</p>
           </div>
         </Card>
 
@@ -108,7 +110,7 @@ export default function PointsPage() {
           {/* 积分明细 */}
           <Card glowColor="cyan" className="mb-6">
             <div className="mb-4 flex items-center justify-between">
-              <h2 className="text-base font-medium text-star-white">积分明细</h2>
+              <h2 className="text-base font-medium text-star-white">{t('points.transactions')}</h2>
               {/* 筛选 */}
               <div className="flex gap-1">
                 <button
@@ -117,7 +119,7 @@ export default function PointsPage() {
                     !txType ? 'bg-neon-cyan/15 text-neon-cyan border border-neon-cyan/30' : 'text-star-dim hover:text-star-white'
                   }`}
                 >
-                  全部
+                  {t('points.all')}
                 </button>
                 <button
                   onClick={() => { setTxType('earn'); setTxPage(1) }}
@@ -125,7 +127,7 @@ export default function PointsPage() {
                     txType === 'earn' ? 'bg-green-500/15 text-green-400 border border-green-500/30' : 'text-star-dim hover:text-star-white'
                   }`}
                 >
-                  赚取
+                  {t('points.earn')}
                 </button>
                 <button
                   onClick={() => { setTxType('spend'); setTxPage(1) }}
@@ -133,7 +135,7 @@ export default function PointsPage() {
                     txType === 'spend' ? 'bg-red-500/15 text-red-400 border border-red-500/30' : 'text-star-dim hover:text-star-white'
                   }`}
                 >
-                  消费
+                  {t('points.spend')}
                 </button>
               </div>
             </div>
@@ -148,7 +150,7 @@ export default function PointsPage() {
                 ))}
               </div>
             ) : txData?.items.length === 0 ? (
-              <p className="py-8 text-center text-sm text-star-dim">暂无积分记录</p>
+              <p className="py-8 text-center text-sm text-star-dim">{t('points.noTransactions')}</p>
             ) : (
               <div className="space-y-3">
                 {txData?.items.map((tx) => (
@@ -202,7 +204,7 @@ export default function PointsPage() {
           <Card glowColor="purple" className="mb-6">
             <h2 className="mb-4 flex items-center gap-2 text-base font-medium text-star-white">
               <Gift className="h-4 w-4 text-neon-purple" />
-              兑换商城
+              {t('points.redeemShop')}
             </h2>
 
             {rewardsLoading ? (
@@ -212,7 +214,7 @@ export default function PointsPage() {
                 ))}
               </div>
             ) : rewards?.length === 0 ? (
-              <p className="py-8 text-center text-sm text-star-dim">暂无可兑换奖励</p>
+              <p className="py-8 text-center text-sm text-star-dim">{t('points.noRewards')}</p>
             ) : (
               <div className="grid grid-cols-2 gap-3">
                 {rewards?.map((reward) => {
@@ -237,7 +239,7 @@ export default function PointsPage() {
                         <span className="text-sm font-medium text-neon-cyan">{reward.pointsCost}</span>
                       </div>
                       {reward.stock !== undefined && (
-                        <p className="mt-1 text-xs text-star-dim">剩余 {reward.stock}</p>
+                        <p className="mt-1 text-xs text-star-dim">{t('points.remaining')} {reward.stock}</p>
                       )}
                       <Button
                         variant={canRedeem ? 'primary' : 'secondary'}
@@ -249,9 +251,9 @@ export default function PointsPage() {
                         {redeemingId === reward.id ? (
                           <Loader2 className="h-3 w-3 animate-spin" />
                         ) : canRedeem ? (
-                          '兑换'
+                          t('points.redeem')
                         ) : (
-                          '积分不足'
+                          t('points.insufficient')
                         )}
                       </Button>
                     </div>

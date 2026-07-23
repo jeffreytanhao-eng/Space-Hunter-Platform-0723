@@ -1,4 +1,4 @@
-'use client'
+﻿'use client'
 
 import { useState, useRef, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
@@ -11,6 +11,7 @@ import { Card } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { useAuthStore } from '@/stores/auth-store'
+import { useTranslation } from '@/lib/i18n'
 import { Upload, X, ImagePlus, Loader2 } from 'lucide-react'
 
 /* 图片预览项 */
@@ -23,6 +24,7 @@ interface ImagePreview {
 
 /* 发帖页面 */
 export default function NewPostPage() {
+  const { t } = useTranslation()
   const router = useRouter()
   const { isAuthenticated } = useAuthStore()
   const fileInputRef = useRef<HTMLInputElement>(null)
@@ -104,15 +106,15 @@ export default function NewPostPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     if (!sectionId) {
-      setError('请选择板块')
+      setError(t('post.noSection'))
       return
     }
     if (!title.trim()) {
-      setError('请输入标题')
+      setError(t('post.noTitle'))
       return
     }
     if (!content.trim()) {
-      setError('请输入正文')
+      setError(t('post.noContent'))
       return
     }
 
@@ -142,9 +144,9 @@ export default function NewPostPage() {
       <div className="flex min-h-screen flex-col">
         <Header />
         <main className="mx-auto flex-1 px-4 py-20 text-center">
-          <p className="text-star-dim">请先登录后发帖</p>
+          <p className="text-star-dim">{t('post.loginRequired')}</p>
           <Button variant="primary" className="mt-4" onClick={() => router.push('/login')}>
-            去登录
+            {t('common.goToLogin')}
           </Button>
         </main>
         <Footer />
@@ -157,19 +159,19 @@ export default function NewPostPage() {
       <Header />
 
       <main className="mx-auto w-full max-w-3xl flex-1 px-4 py-6">
-        <h1 className="mb-6 text-2xl font-bold text-star-white">发布新帖</h1>
+        <h1 className="mb-6 text-2xl font-bold text-star-white">{t('post.newTitle')}</h1>
 
         <form onSubmit={handleSubmit}>
           <Card glowColor="blue" className="space-y-5">
             {/* 选择板块 */}
             <div className="space-y-1.5">
-              <label className="block text-sm text-star-dim">选择板块 *</label>
+              <label className="block text-sm text-star-dim">{t('post.selectSection')} *</label>
               <select
                 value={sectionId}
                 onChange={(e) => setSectionId(e.target.value)}
                 className="w-full rounded-lg border border-space-600 bg-space-700 px-3 py-2 text-sm text-star-white focus:border-neon-blue/50 focus:outline-none focus:ring-1 focus:ring-neon-blue/30 transition-colors"
               >
-                <option value="">请选择板块</option>
+                <option value="">{t('post.selectSectionPlaceholder')}</option>
                 {sections?.map((s) => (
                   <option key={s.id} value={s.id}>{s.name}</option>
                 ))}
@@ -178,12 +180,12 @@ export default function NewPostPage() {
 
             {/* 标题 */}
             <div className="space-y-1.5">
-              <label className="block text-sm text-star-dim">标题 *</label>
+              <label className="block text-sm text-star-dim">{t('post.title')} *</label>
               <input
                 type="text"
                 value={title}
                 onChange={(e) => setTitle(e.target.value)}
-                placeholder="请输入帖子标题"
+                placeholder={t('post.titlePlaceholder')}
                 maxLength={100}
                 className="w-full rounded-lg border border-space-600 bg-space-700 px-3 py-2 text-sm text-star-white placeholder:text-star-dim/60 focus:border-neon-blue/50 focus:outline-none focus:ring-1 focus:ring-neon-blue/30 transition-colors"
               />
@@ -191,11 +193,11 @@ export default function NewPostPage() {
 
             {/* 正文 */}
             <div className="space-y-1.5">
-              <label className="block text-sm text-star-dim">正文 *</label>
+              <label className="block text-sm text-star-dim">{t('post.content')} *</label>
               <textarea
                 value={content}
                 onChange={(e) => setContent(e.target.value)}
-                placeholder="分享你的天文发现、观测经验、器材评测..."
+                placeholder={t('post.contentPlaceholder')}
                 rows={8}
                 className="w-full rounded-lg border border-space-600 bg-space-700 px-3 py-2 text-sm text-star-white placeholder:text-star-dim/60 focus:border-neon-blue/50 focus:outline-none focus:ring-1 focus:ring-neon-blue/30 resize-none transition-colors"
               />
@@ -203,7 +205,7 @@ export default function NewPostPage() {
 
             {/* 标签 */}
             <div className="space-y-1.5">
-              <label className="block text-sm text-star-dim">标签</label>
+              <label className="block text-sm text-star-dim">{t('post.tags')}</label>
               <div className="flex gap-2">
                 <input
                   type="text"
@@ -215,11 +217,11 @@ export default function NewPostPage() {
                       addTag()
                     }
                   }}
-                  placeholder="输入标签后按回车添加"
+                  placeholder={t('post.tagPlaceholder')}
                   className="flex-1 rounded-lg border border-space-600 bg-space-700 px-3 py-2 text-sm text-star-white placeholder:text-star-dim/60 focus:border-neon-blue/50 focus:outline-none focus:ring-1 focus:ring-neon-blue/30 transition-colors"
                 />
                 <Button type="button" variant="secondary" size="md" onClick={addTag}>
-                  添加
+                  {t('post.addTag')}
                 </Button>
               </div>
               {tags.length > 0 && (
@@ -235,7 +237,7 @@ export default function NewPostPage() {
 
             {/* 图片上传 */}
             <div className="space-y-1.5">
-              <label className="block text-sm text-star-dim">图片上传</label>
+              <label className="block text-sm text-star-dim">{t('post.imageUpload')}</label>
               <div
                 onDragOver={handleDragOver}
                 onDragLeave={handleDragLeave}
@@ -248,9 +250,9 @@ export default function NewPostPage() {
                 }`}
               >
                 <ImagePlus className="mx-auto h-8 w-8 text-star-dim" />
-                <p className="mt-2 text-sm text-star-dim">点击或拖拽图片到此处上传</p>
+                <p className="mt-2 text-sm text-star-dim">{t('post.imageUploadDrag')}</p>
                 <p className="mt-1 text-xs text-star-dim/60">
-                  支持 JPG/PNG/GIF，FITS/TIFF/RAW 文件将自动处理
+                  {t('post.imageUploadHint')}
                 </p>
                 <input
                   ref={fileInputRef}
@@ -308,16 +310,16 @@ export default function NewPostPage() {
             {/* 提交按钮 */}
             <div className="flex justify-end gap-3">
               <Button type="button" variant="secondary" onClick={() => router.back()}>
-                取消
+                {t('post.cancel')}
               </Button>
               <Button type="submit" disabled={submitting}>
                 {submitting ? (
                   <>
                     <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    发布中...
+                    {t('post.submitting')}
                   </>
                 ) : (
-                  '发布帖子'
+                  t('post.submit')
                 )}
               </Button>
             </div>

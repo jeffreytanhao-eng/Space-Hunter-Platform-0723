@@ -1,12 +1,14 @@
-'use client'
+﻿'use client'
 
 import Link from 'next/link'
 import { useQuery } from '@tanstack/react-query'
 import { getSections } from '@/services/sections'
+import { useTranslation } from '@/lib/i18n'
 import { Hash, Flame } from 'lucide-react'
 
 /* 侧边栏：板块列表 + 热门标签 */
 export function Sidebar() {
+  const { t } = useTranslation()
   const { data: sections } = useQuery({
     queryKey: ['sections'],
     queryFn: getSections,
@@ -31,7 +33,7 @@ export function Sidebar() {
         <div className="rounded-xl border-glow-purple bg-space-800 p-3">
           <h3 className="mb-2 flex items-center gap-2 text-sm font-medium text-star-white">
             <Hash className="h-4 w-4 text-neon-purple" />
-            板块导航
+            {t('sidebar.sectionNav')}
           </h3>
           <nav className="space-y-0.5">
             {sections ? (
@@ -58,7 +60,7 @@ export function Sidebar() {
         <div className="rounded-xl border-glow-cyan bg-space-800 p-3">
           <h3 className="mb-2 flex items-center gap-2 text-sm font-medium text-star-white">
             <Flame className="h-4 w-4 text-neon-cyan" />
-            热门标签
+            {t('sidebar.hotTags')}
           </h3>
           <div className="flex flex-wrap gap-1.5">
             {hotTags.map((tag) => (

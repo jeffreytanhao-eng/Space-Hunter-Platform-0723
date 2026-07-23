@@ -1,4 +1,4 @@
-'use client'
+﻿'use client'
 
 import { useState } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
@@ -14,27 +14,29 @@ import { Skeleton } from '@/components/ui/skeleton'
 import { Starfield } from '@/components/effects/starfield'
 import { useAuthStore } from '@/stores/auth-store'
 import { format } from 'date-fns'
+import { useTranslation } from '@/lib/i18n'
 import {
   Search, Filter, ArrowUpDown, Heart, Download, X,
   ChevronLeft, ChevronRight, Maximize2, Info, Plus,
   Loader2, Image as ImageIcon, Star, Eye
 } from 'lucide-react'
 
-/* 画廊分类 */
-const categories = [
-  { value: '', label: '全部' },
-  { value: 'deep_sky', label: '深空天体' },
-  { value: 'solar_system', label: '太阳系' },
-  { value: 'starfield', label: '星野' },
-  { value: 'aurora', label: '极光' },
-  { value: 'eclipse', label: '日月食' },
-  { value: 'other', label: '其他' },
-]
-
 /* 荣耀画廊页 */
 export default function GalleryPage() {
+  const { t } = useTranslation()
   const queryClient = useQueryClient()
   const { isAuthenticated } = useAuthStore()
+
+  /* 画廊分类 */
+  const categories = [
+    { value: '', label: t('gallery.all') },
+    { value: 'deep_sky', label: t('gallery.deepSky') },
+    { value: 'solar_system', label: t('gallery.solarSystem') },
+    { value: 'starfield', label: t('gallery.starfield') },
+    { value: 'aurora', label: t('gallery.aurora') },
+    { value: 'eclipse', label: t('gallery.eclipse') },
+    { value: 'other', label: t('gallery.other') },
+  ]
 
   const [page, setPage] = useState(1)
   const [category, setCategory] = useState('')
@@ -117,9 +119,9 @@ export default function GalleryPage() {
         }} />
         <div className="relative mx-auto max-w-7xl px-4 py-16 text-center">
           <h1 className="text-5xl font-bold text-neon-cyan text-glow-cyan md:text-6xl">
-            荣耀画廊
+            {t('gallery.title')}
           </h1>
-          <p className="mt-3 text-lg text-star-dim">探索宇宙深处，定格星空之美</p>
+          <p className="mt-3 text-lg text-star-dim">{t('gallery.subtitle')}</p>
         </div>
       </div>
 
@@ -151,7 +153,7 @@ export default function GalleryPage() {
                 className="flex items-center gap-1.5 rounded-lg border border-space-600 bg-space-700 px-3 py-1.5 text-sm text-star-dim hover:text-star-white transition-colors"
               >
                 <ArrowUpDown className="h-3.5 w-3.5" />
-                {sort === 'time' ? '最新' : '最热'}
+                {sort === 'time' ? t('gallery.sortLatest') : t('gallery.sortHottest')}
               </button>
 
               {/* 搜索 */}
@@ -161,7 +163,7 @@ export default function GalleryPage() {
                   type="text"
                   value={searchInput}
                   onChange={(e) => setSearchInput(e.target.value)}
-                  placeholder="搜索画廊..."
+                  placeholder={t('gallery.searchPlaceholder')}
                   className="w-40 rounded-lg border border-space-600 bg-space-700 py-1.5 pl-9 pr-3 text-sm text-star-white placeholder:text-star-dim/60 focus:border-neon-cyan/50 focus:outline-none focus:ring-1 focus:ring-neon-cyan/30 transition-colors"
                 />
               </form>
@@ -170,7 +172,7 @@ export default function GalleryPage() {
               {isAuthenticated && (
                 <Button variant="primary" size="sm" onClick={() => setShowApplyModal(true)}>
                   <Plus className="mr-1 h-3.5 w-3.5" />
-                  申请进入画廊
+                  {t('gallery.applyBtn')}
                 </Button>
               )}
             </div>
@@ -191,7 +193,7 @@ export default function GalleryPage() {
         ) : items.length === 0 ? (
           <div className="py-20 text-center">
             <ImageIcon className="mx-auto h-12 w-12 text-star-dim/40" />
-            <p className="mt-4 text-star-dim">暂无画廊作品</p>
+            <p className="mt-4 text-star-dim">{t('gallery.noPhotos')}</p>
           </div>
         ) : (
           <div className="columns-1 gap-4 sm:columns-2 lg:columns-3 xl:columns-4">
@@ -291,12 +293,12 @@ export default function GalleryPage() {
                 {items[lightboxIndex].fitsMeta && (
                   <Button variant="ghost" size="sm" onClick={() => setShowFitsMeta(!showFitsMeta)}>
                     <Info className="mr-1 h-4 w-4" />
-                    FITS 元数据
+                    {t('gallery.fitsMetadata')}
                   </Button>
                 )}
                 <Button variant="ghost" size="sm" onClick={() => handleDownload(items[lightboxIndex].id)}>
                   <Download className="mr-1 h-4 w-4" />
-                  下载原始文件
+                  {t('gallery.download')}
                 </Button>
                 <button onClick={() => { setLightboxIndex(null); setShowFitsMeta(false) }} className="rounded-lg p-2 text-star-dim hover:text-star-white transition-colors">
                   <X className="h-5 w-5" />
@@ -353,48 +355,48 @@ export default function GalleryPage() {
               <div className="absolute right-6 top-16 w-72 rounded-xl border-glow-purple bg-space-800/95 p-4 backdrop-blur-md">
                 <h4 className="mb-3 flex items-center gap-2 text-sm font-medium text-neon-purple">
                   <Star className="h-4 w-4" />
-                  FITS 元数据
+                  {t('gallery.fitsMetadata')}
                 </h4>
                 <div className="space-y-2 text-sm">
                   {items[lightboxIndex].fitsMeta!.object && (
                     <div className="flex justify-between">
-                      <span className="text-star-dim">天体</span>
+                      <span className="text-star-dim">{t('post.fitsObject')}</span>
                       <span className="text-star-white">{items[lightboxIndex].fitsMeta!.object}</span>
                     </div>
                   )}
                   {items[lightboxIndex].fitsMeta!.telescope && (
                     <div className="flex justify-between">
-                      <span className="text-star-dim">望远镜</span>
+                      <span className="text-star-dim">{t('post.fitsTelescope')}</span>
                       <span className="text-star-white">{items[lightboxIndex].fitsMeta!.telescope}</span>
                     </div>
                   )}
                   {items[lightboxIndex].fitsMeta!.exposure && (
                     <div className="flex justify-between">
-                      <span className="text-star-dim">曝光</span>
+                      <span className="text-star-dim">{t('post.fitsExposure')}</span>
                       <span className="text-star-white">{items[lightboxIndex].fitsMeta!.exposure}</span>
                     </div>
                   )}
                   {items[lightboxIndex].fitsMeta!.filter && (
                     <div className="flex justify-between">
-                      <span className="text-star-dim">滤镜</span>
+                      <span className="text-star-dim">{t('post.fitsFilter')}</span>
                       <span className="text-star-white">{items[lightboxIndex].fitsMeta!.filter}</span>
                     </div>
                   )}
                   {items[lightboxIndex].fitsMeta!.dateObs && (
                     <div className="flex justify-between">
-                      <span className="text-star-dim">观测日期</span>
+                      <span className="text-star-dim">{t('post.fitsDateObs')}</span>
                       <span className="text-star-white">{items[lightboxIndex].fitsMeta!.dateObs}</span>
                     </div>
                   )}
                   {items[lightboxIndex].fitsMeta!.resolution && (
                     <div className="flex justify-between">
-                      <span className="text-star-dim">分辨率</span>
+                      <span className="text-star-dim">{t('post.fitsResolution')}</span>
                       <span className="text-star-white">{items[lightboxIndex].fitsMeta!.resolution}</span>
                     </div>
                   )}
                   {items[lightboxIndex].fitsMeta!.fileSize && (
                     <div className="flex justify-between">
-                      <span className="text-star-dim">文件大小</span>
+                      <span className="text-star-dim">{t('post.fitsFileSize')}</span>
                       <span className="text-star-white">{(items[lightboxIndex].fitsMeta!.fileSize / 1024 / 1024).toFixed(1)} MB</span>
                     </div>
                   )}
@@ -410,7 +412,7 @@ export default function GalleryPage() {
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-space-900/80 backdrop-blur-sm" onClick={() => setShowApplyModal(false)}>
           <div className="w-full max-w-lg rounded-xl border-glow-cyan bg-space-800 p-6" onClick={(e) => e.stopPropagation()}>
             <div className="flex items-center justify-between">
-              <h2 className="text-lg font-medium text-star-white">申请进入画廊</h2>
+              <h2 className="text-lg font-medium text-star-white">{t('gallery.applyModalTitle')}</h2>
               <button onClick={() => setShowApplyModal(false)} className="text-star-dim hover:text-star-white transition-colors">
                 <X className="h-5 w-5" />
               </button>
@@ -421,23 +423,23 @@ export default function GalleryPage() {
                 <div className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-full bg-neon-cyan/15">
                   <Star className="h-6 w-6 text-neon-cyan" />
                 </div>
-                <p className="text-star-white">申请已提交，等待审核</p>
-                <p className="mt-1 text-sm text-star-dim">审核通过后作品将展示在画廊中</p>
+                <p className="text-star-white">{t('gallery.applySuccess')}</p>
+                <p className="mt-1 text-sm text-star-dim">{t('gallery.applySuccessHint')}</p>
                 <Button variant="primary" className="mt-4" onClick={() => { setShowApplyModal(false); setApplyStatus('idle'); setApplyTitle(''); setApplyDescription(''); setSelectedPhotoId('') }}>
-                  关闭
+                  {t('gallery.applyClose')}
                 </Button>
               </div>
             ) : (
               <div className="mt-4 space-y-4">
                 {/* 选择已发布照片 */}
                 <div className="space-y-1.5">
-                  <label className="block text-sm text-star-dim">选择已发布照片</label>
+                  <label className="block text-sm text-star-dim">{t('gallery.applySelectPhoto')}</label>
                   <select
                     value={selectedPhotoId}
                     onChange={(e) => setSelectedPhotoId(e.target.value)}
                     className="w-full rounded-lg border border-space-600 bg-space-700 px-3 py-2 text-sm text-star-white focus:border-neon-cyan/50 focus:outline-none focus:ring-1 focus:ring-neon-cyan/30 transition-colors"
                   >
-                    <option value="">请选择照片</option>
+                    <option value="">{t('gallery.applySelectPhotoPlaceholder')}</option>
                     {myPostsData?.items.filter(p => p.images && p.images.length > 0).map((post) => (
                       <option key={post.id} value={post.id}>{post.title}</option>
                     ))}
@@ -446,36 +448,36 @@ export default function GalleryPage() {
 
                 {/* 标题 */}
                 <div className="space-y-1.5">
-                  <label className="block text-sm text-star-dim">标题</label>
+                  <label className="block text-sm text-star-dim">{t('gallery.applyTitle')}</label>
                   <input
                     type="text"
                     value={applyTitle}
                     onChange={(e) => setApplyTitle(e.target.value)}
-                    placeholder="为你的作品起一个标题"
+                    placeholder={t('gallery.applyTitlePlaceholder')}
                     className="w-full rounded-lg border border-space-600 bg-space-700 px-3 py-2 text-sm text-star-white placeholder:text-star-dim/60 focus:border-neon-cyan/50 focus:outline-none focus:ring-1 focus:ring-neon-cyan/30 transition-colors"
                   />
                 </div>
 
                 {/* 描述 */}
                 <div className="space-y-1.5">
-                  <label className="block text-sm text-star-dim">描述（可选）</label>
+                  <label className="block text-sm text-star-dim">{t('gallery.applyDescription')}</label>
                   <textarea
                     value={applyDescription}
                     onChange={(e) => setApplyDescription(e.target.value)}
                     rows={3}
-                    placeholder="描述你的作品..."
+                    placeholder={t('gallery.applyDescriptionPlaceholder')}
                     className="w-full rounded-lg border border-space-600 bg-space-700 px-3 py-2 text-sm text-star-white placeholder:text-star-dim/60 focus:border-neon-cyan/50 focus:outline-none focus:ring-1 focus:ring-neon-cyan/30 resize-none transition-colors"
                   />
                 </div>
 
                 <div className="flex justify-end gap-3">
-                  <Button variant="ghost" onClick={() => setShowApplyModal(false)}>取消</Button>
+                  <Button variant="ghost" onClick={() => setShowApplyModal(false)}>{t('gallery.cancel')}</Button>
                   <Button
                     onClick={handleApply}
                     disabled={!selectedPhotoId || !applyTitle.trim() || applyMutation.isPending}
                   >
                     {applyMutation.isPending ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
-                    提交申请
+                    {t('gallery.applySubmit')}
                   </Button>
                 </div>
               </div>
