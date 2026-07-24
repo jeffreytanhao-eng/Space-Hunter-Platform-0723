@@ -14,7 +14,7 @@
   },
   "scripts": {
     "build": "npm run build --workspaces",
-    "dev:server": "npm run dev -w packages/server",
+    "dev:server": "npm run start:dev -w packages/server",
     "dev:web": "npm run dev -w packages/web",
     "dev:miniapp": "npm run dev -w packages/miniapp",
     "lint": "npm run lint --workspaces",

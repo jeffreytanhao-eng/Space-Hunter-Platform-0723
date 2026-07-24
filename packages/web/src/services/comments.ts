@@ -1,14 +1,50 @@
 import apiClient from '@/lib/api'
 import type { Comment, PaginatedResponse, CommentQuery } from '@/types'
 
-/* 评论相关 API */
+interface BackendComment {
+  id: string
+  postId: string
+  userId: string
+  content: string
+  createdAt: string
+  user?: {
+    id: string
+    nickname: string
+    avatar: string | null
+  }
+}
+
+interface BackendPaginated<T> {
+  data: T[]
+  total: number
+  page: number
+  pageSize: number
+  totalPages: number
+}
+
+function transformComment(bc: BackendComment): Comment {
+  return {
+    id: bc.id,
+    postId: bc.postId,
+    authorId: bc.userId,
+    authorNickname: bc.user?.nickname || '',
+    authorAvatar: bc.user?.avatar || undefined,
+    content: bc.content,
+    createdAt: bc.createdAt,
+  }
+}
 
 /** 获取评论列表 */
 export async function getComments(postId: string, query?: CommentQuery) {
-  const { data } = await apiClient.get<PaginatedResponse<Comment>>(`/posts/${postId}/comments`, {
+  const { data } = await apiClient.get<BackendPaginated<BackendComment>>(`/posts/${postId}/comments`, {
     params: query,
   })
-  return data
+  return {
+    items: (data.data || []).map(transformComment),
+    total: data.total,
+    page: data.page,
+    pageSize: data.pageSize,
+  } as PaginatedResponse<Comment>
 }
 
 /** 发表评论 */

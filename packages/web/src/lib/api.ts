@@ -25,7 +25,6 @@ apiClient.interceptors.response.use(
   (response) => response,
   (error) => {
     if (error.response?.status === 401) {
-      // token 过期，跳转登录
       if (typeof window !== 'undefined') {
         localStorage.removeItem('auth_token')
         window.location.href = '/login'

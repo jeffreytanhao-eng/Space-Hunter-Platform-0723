@@ -169,9 +169,9 @@ export default function PostDetailPage() {
           </div>
 
           {/* 标签 */}
-          {post.tags.length > 0 && (
+          {post.tags && post.tags.length > 0 && (
             <div className="mt-4 flex flex-wrap gap-1.5">
-              {post.tags.map((t) => (
+              {(post.tags || []).map((t) => (
                 <Badge key={t} variant="cyan">{t}</Badge>
               ))}
             </div>
@@ -185,7 +185,7 @@ export default function PostDetailPage() {
           {/* 图片画廊 */}
           {post.images && post.images.length > 0 && (
             <div className="mt-6 grid grid-cols-2 gap-3 sm:grid-cols-3">
-              {post.images.map((img, index) => (
+              {(post.images || []).map((img, index) => (
                 <div
                   key={img.id}
                   className="group relative cursor-pointer overflow-hidden rounded-lg border border-space-600"
@@ -337,7 +337,7 @@ export default function PostDetailPage() {
 
           {/* 评论列表 */}
           <div className="space-y-4">
-            {commentsData?.items.map((comment) => (
+            {(commentsData?.items || []).map((comment) => (
               <div key={comment.id} className="flex gap-3">
                 <Avatar src={comment.authorAvatar} alt={comment.authorNickname} size="sm" />
                 <div className="flex-1 min-w-0">
@@ -366,7 +366,7 @@ export default function PostDetailPage() {
                 </div>
               </div>
             ))}
-            {(!commentsData || commentsData.items.length === 0) && (
+            {(!commentsData || !commentsData.items || commentsData.items.length === 0) && (
               <p className="py-4 text-center text-sm text-star-dim">暂无评论，快来发表第一条吧！</p>
             )}
           </div>

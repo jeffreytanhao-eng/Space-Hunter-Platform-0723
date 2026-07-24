@@ -1,18 +1,85 @@
 import apiClient from '@/lib/api'
 import type { Post, PaginatedResponse, PostQuery, CreatePostData } from '@/types'
 
+/* 后端返回的帖子类型 */
+interface BackendPost {
+  id: string
+  userId: string
+  sectionId: string
+  title: string
+  content: string
+  images: { url: string; type: 'image' | 'fits'; jobId?: string }[] | null
+  tags: string[] | null
+  hasFits: boolean
+  status: string
+  likeCount: number
+  commentCount: number
+  createdAt: string
+  updatedAt: string
+  user?: {
+    id: string
+    nickname: string
+    avatar: string | null
+  }
+  section?: {
+    id: string
+    name: string
+  }
+}
+
+interface BackendPaginated<T> {
+  data: T[]
+  total: number
+  page: number
+  pageSize: number
+  totalPages: number
+}
+
+/* 转换后端帖子格式到前端格式 */
+function transformPost(bp: BackendPost): Post {
+  const tags = Array.isArray(bp.tags) ? bp.tags : []
+  const images = Array.isArray(bp.images) ? bp.images : []
+  return {
+    id: bp.id,
+    title: bp.title,
+    content: bp.content,
+    authorId: bp.userId,
+    authorNickname: bp.user?.nickname || '',
+    authorAvatar: bp.user?.avatar || undefined,
+    sectionId: bp.sectionId,
+    sectionName: bp.section?.name,
+    tags,
+    images: images.map((img) => ({
+      id: img.url,
+      url: img.url,
+      thumbnailUrl: img.url,
+      isFits: img.type === 'fits',
+      processingStatus: img.type === 'fits' ? ('done' as const) : undefined,
+    })),
+    likesCount: bp.likeCount,
+    commentsCount: bp.commentCount,
+    createdAt: bp.createdAt,
+    updatedAt: bp.updatedAt,
+  }
+}
+
 /* 帖子相关 API */
 
 /** 获取帖子列表 */
 export async function getPosts(query?: PostQuery) {
-  const { data } = await apiClient.get<PaginatedResponse<Post>>('/posts', { params: query })
-  return data
+  const { data } = await apiClient.get<BackendPaginated<BackendPost>>('/posts', { params: query })
+  return {
+    items: (data.data || []).map(transformPost),
+    total: data.total,
+    page: data.page,
+    pageSize: data.pageSize,
+  } as PaginatedResponse<Post>
 }
 
 /** 获取帖子详情 */
 export async function getPost(id: string) {
-  const { data } = await apiClient.get<Post>(`/posts/${id}`)
-  return data
+  const { data } = await apiClient.get<BackendPost>(`/posts/${id}`)
+  return transformPost(data)
 }
 
 /** 发帖 */

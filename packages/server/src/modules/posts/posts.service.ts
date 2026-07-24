@@ -10,6 +10,8 @@ import { Post } from '../../database/entities/post.entity';
 import { Comment } from '../../database/entities/comment.entity';
 import { FitsAsset } from '../../database/entities/fits-asset.entity';
 import { PointsTransaction } from '../../database/entities/points-transaction.entity';
+import { User } from '../../database/entities/user.entity';
+import { Section } from '../../database/entities/section.entity';
 import { CreatePostDto } from './dto/create-post.dto';
 import { UpdatePostDto } from './dto/update-post.dto';
 import { QueryPostDto } from './dto/query-post.dto';
@@ -48,43 +50,59 @@ export class PostsService {
       order = 'DESC',
     } = query;
 
-    const qb = this.postRepo
-      .createQueryBuilder('post')
-      .leftJoinAndSelect('post.user', 'user')
-      .leftJoinAndSelect('post.section', 'section');
+    const whereConditions: string[] = [];
+    const parameters: any = {};
 
-    // 非管理员只能看 published
     if (userRole !== 'admin') {
-      qb.andWhere('post.status = :status', { status: 'published' });
+      whereConditions.push('post.status = :status');
+      parameters.status = 'published';
     }
 
-    // 板块筛选
     if (sectionId) {
-      qb.andWhere('post.section_id = :sectionId', { sectionId });
+      whereConditions.push('post.section_id = :sectionId');
+      parameters.sectionId = sectionId;
     }
 
-    // 标签筛选（JSONB 包含）
     if (tags && tags.length > 0) {
-      qb.andWhere('post.tags @> :tags', { tags: JSON.stringify(tags) });
+      whereConditions.push('post.tags @> :tags');
+      parameters.tags = JSON.stringify(tags);
     }
 
-    // 关键词搜索
     if (keyword) {
-      qb.andWhere(
-        '(post.title ILIKE :keyword OR post.content ILIKE :keyword)',
-        { keyword: `%${keyword}%` },
-      );
+      whereConditions.push('(post.title ILIKE :keyword OR post.content ILIKE :keyword)');
+      parameters.keyword = `%${keyword}%`;
     }
 
-    // 排序
+    const whereClause = whereConditions.length > 0 ? whereConditions.join(' AND ') : '1=1';
+
     const sortColumn = sortBy === 'created_at' ? 'post.created_at' : `post.${sortBy === 'like_count' ? 'like_count' : 'comment_count'}`;
-    qb.orderBy(sortColumn, order);
 
-    // 分页
     const skip = (page - 1) * pageSize;
-    qb.skip(skip).take(pageSize);
 
-    const [data, total] = await qb.getManyAndCount();
+    const queryBuilder = this.postRepo
+      .createQueryBuilder('post')
+      .where(whereClause, parameters)
+      .orderBy(sortColumn, order)
+      .skip(skip)
+      .take(pageSize);
+
+    const [data, total] = await queryBuilder.getManyAndCount();
+
+    const userIds = [...new Set(data.map(p => p.userId))];
+    const sectionIds = [...new Set(data.map(p => p.sectionId))];
+
+    const [users, sections] = await Promise.all([
+      userIds.length > 0 ? this.postRepo.manager.getRepository(User).findByIds(userIds) : [],
+      sectionIds.length > 0 ? this.postRepo.manager.getRepository(Section).findByIds(sectionIds) : [],
+    ]);
+
+    const userMap = new Map(users.map((u: any) => [u.id, u]));
+    const sectionMap = new Map(sections.map((s: any) => [s.id, s]));
+
+    (data as any[]).forEach(post => {
+      post.user = userMap.get(post.userId) || null;
+      post.section = sectionMap.get(post.sectionId) || null;
+    });
 
     return {
       data,
@@ -97,13 +115,34 @@ export class PostsService {
 
   /** 帖子详情，含作者信息和评论 */
   async findById(id: string): Promise<Post> {
-    const post = await this.postRepo.findOne({
-      where: { id },
-      relations: ['user', 'section', 'comments', 'comments.user'],
-    });
+    const post = await this.postRepo.findOne({ where: { id } });
     if (!post) {
       throw new NotFoundException('帖子不存在');
     }
+
+    const user = await this.postRepo.manager.getRepository(User).findOne({ where: { id: post.userId } });
+    const section = await this.postRepo.manager.getRepository(Section).findOne({ where: { id: post.sectionId } });
+
+    const comments = await this.commentRepo
+      .createQueryBuilder('comment')
+      .where('comment.post_id = :postId', { postId: id })
+      .orderBy('comment.created_at', 'ASC')
+      .getMany();
+
+    const commentUserIds = [...new Set(comments.map(c => c.userId))];
+    const commentUsers = commentUserIds.length > 0
+      ? await this.postRepo.manager.getRepository(User).findByIds(commentUserIds)
+      : [];
+    const commentUserMap = new Map(commentUsers.map((u: any) => [u.id, u]));
+
+    (comments as any[]).forEach(comment => {
+      comment.user = commentUserMap.get(comment.userId) || null;
+    });
+
+    (post as any).user = user || null;
+    (post as any).section = section || null;
+    (post as any).comments = comments;
+
     return post;
   }
 
