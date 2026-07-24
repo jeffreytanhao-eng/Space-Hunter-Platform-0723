@@ -2,6 +2,8 @@ import { NestFactory } from '@nestjs/core';
 import { ValidationPipe } from '@nestjs/common';
 import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
 import { AppModule } from './app.module';
+import * as express from 'express';
+import * as path from 'path';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
@@ -32,6 +34,10 @@ async function bootstrap() {
     const document = SwaggerModule.createDocument(app, config);
     SwaggerModule.setup('api-docs', app, document);
   }
+
+  // 本地存储静态文件服务（COS 未配置时降级使用）
+  const uploadDir = process.env.UPLOAD_LOCAL_DIR || './uploads';
+  app.use('/local-files', express.static(path.resolve(uploadDir)));
 
   // 监听端口，从环境变量读取，默认 3000
   const port = process.env.APP_PORT || 3000;
