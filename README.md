@@ -139,7 +139,7 @@ graphify-out/graph.html
 graphify-out/GRAPH_REPORT.md
 ```
 
-图谱包含 1168 个节点、2222 条边、105 个社区，post-commit hook 会在每次提交后自动更新（基于 commit `5cf6de2`）。
+图谱包含 1196 个节点、2299 条边、110 个社区，post-commit hook 会在每次提交后自动更新（基于 commit `48d4315`）。
 
 ## 版权声明
 
