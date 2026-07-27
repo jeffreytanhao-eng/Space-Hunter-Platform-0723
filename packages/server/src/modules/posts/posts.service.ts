@@ -15,6 +15,7 @@ import { Section } from '../../database/entities/section.entity';
 import { CreatePostDto } from './dto/create-post.dto';
 import { UpdatePostDto } from './dto/update-post.dto';
 import { QueryPostDto } from './dto/query-post.dto';
+import { ModerationService } from '../../common/moderation';
 
 /** 分页结果 */
 export interface PaginatedResult<T> {
@@ -36,6 +37,7 @@ export class PostsService {
     private readonly fitsAssetRepo: Repository<FitsAsset>,
     @InjectRepository(PointsTransaction)
     private readonly pointsTxRepo: Repository<PointsTransaction>,
+    private readonly moderationService: ModerationService,
   ) {}
 
   /** 分页查询帖子列表 */
@@ -96,8 +98,8 @@ export class PostsService {
       sectionIds.length > 0 ? this.postRepo.manager.getRepository(Section).findByIds(sectionIds) : [],
     ]);
 
-    const userMap = new Map(users.map((u: any) => [u.id, u]));
-    const sectionMap = new Map(sections.map((s: any) => [s.id, s]));
+    const userMap = new Map(users.map((u: any) => [u.id, u] as [any, any]));
+    const sectionMap = new Map(sections.map((s: any) => [s.id, s] as [any, any]));
 
     (data as any[]).forEach(post => {
       post.user = userMap.get(post.userId) || null;
@@ -151,6 +153,28 @@ export class PostsService {
     // 判断是否包含 FITS 文件
     const hasFits = dto.images?.some((img) => img.type === 'fits') ?? false;
 
+    // 内容自动审核
+    const moderationResult = this.moderationService.moderatePost(
+      dto.title,
+      dto.content,
+      dto.tags,
+    );
+
+    let status: string;
+    switch (moderationResult.result) {
+      case 'pass':
+        status = 'published';
+        break;
+      case 'suspect':
+        status = 'pending_manual';
+        break;
+      case 'block':
+        status = 'rejected';
+        break;
+      default:
+        status = 'pending_auto';
+    }
+
     const post = this.postRepo.create({
       userId,
       sectionId: dto.sectionId,
@@ -159,24 +183,25 @@ export class PostsService {
       images: dto.images ?? null,
       tags: dto.tags ?? null,
       hasFits,
-      // Phase 0 规则层简化：无关键词黑名单，直接设为 published
-      // TODO: Phase 1 接入腾讯云内容安全 API
-      status: 'published',
+      status,
     });
 
     const saved = await this.postRepo.save(post);
 
-    // 发帖积分奖励 +10
-    await this.earnPoints(userId, 10, 'post_create', saved.id, `发帖奖励: ${saved.title}`);
+    // 仅审核通过的帖子发放积分奖励
+    if (status === 'published') {
+      // 发帖积分奖励 +10
+      await this.earnPoints(userId, 10, 'post_create', saved.id, `发帖奖励: ${saved.title}`);
 
-    // 上传照片积分奖励 +5（如有图片）
-    if (dto.images && dto.images.length > 0) {
-      await this.earnPoints(userId, 5, 'photo_upload', saved.id, '上传照片奖励');
-    }
+      // 上传照片积分奖励 +5（如有图片）
+      if (dto.images && dto.images.length > 0) {
+        await this.earnPoints(userId, 5, 'photo_upload', saved.id, '上传照片奖励');
+      }
 
-    // 专业格式上传 +20（FITS 文件差异化奖励）
-    if (hasFits) {
-      await this.earnPoints(userId, 20, 'fits_upload', saved.id, '专业格式上传奖励');
+      // 专业格式上传 +20（FITS 文件差异化奖励）
+      if (hasFits) {
+        await this.earnPoints(userId, 20, 'fits_upload', saved.id, '专业格式上传奖励');
+      }
     }
 
     return saved;
@@ -201,6 +226,47 @@ export class PostsService {
       ...(dto.images !== undefined && { images: dto.images }),
       ...(dto.tags !== undefined && { tags: dto.tags }),
     });
+
+    // 编辑内容后重新触发审核
+    const needsModeration =
+      dto.title !== undefined || dto.content !== undefined || dto.tags !== undefined;
+
+    if (needsModeration) {
+      const wasPublished = post.status === 'published';
+      const moderationResult = this.moderationService.moderatePost(
+        post.title,
+        post.content,
+        post.tags,
+      );
+
+      switch (moderationResult.result) {
+        case 'pass':
+          post.status = 'published';
+          break;
+        case 'suspect':
+          post.status = 'pending_manual';
+          break;
+        case 'block':
+          post.status = 'rejected';
+          break;
+      }
+
+      // 如果之前已发布，现在被下架，需要扣除积分（此处仅记录，实际积分回滚逻辑可后续完善）
+      if (wasPublished && post.status !== 'published') {
+        // TODO: 积分回滚逻辑
+      }
+
+      // 如果之前未通过，现在通过了，补发积分
+      if (!wasPublished && post.status === 'published') {
+        await this.earnPoints(userId, 10, 'post_create', post.id, `发帖奖励: ${post.title}`);
+        if (post.images && post.images.length > 0) {
+          await this.earnPoints(userId, 5, 'photo_upload', post.id, '上传照片奖励');
+        }
+        if (post.hasFits) {
+          await this.earnPoints(userId, 20, 'fits_upload', post.id, '专业格式上传奖励');
+        }
+      }
+    }
 
     return this.postRepo.save(post);
   }

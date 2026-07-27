@@ -7,12 +7,14 @@ import { PointsTransaction } from '../../database/entities/points-transaction.en
 import { PostsController } from './posts.controller';
 import { PostsService } from './posts.service';
 import { SectionsModule } from '../sections/sections.module';
+import { ModerationModule } from '../../common/moderation';
 
 // 帖子模块
 @Module({
   imports: [
     TypeOrmModule.forFeature([Post, Comment, FitsAsset, PointsTransaction]),
     SectionsModule,
+    ModerationModule,
   ],
   controllers: [PostsController],
   providers: [PostsService],

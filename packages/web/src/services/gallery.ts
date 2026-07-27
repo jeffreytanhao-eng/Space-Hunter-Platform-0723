@@ -1,18 +1,84 @@
 import apiClient from '@/lib/api'
 import type { GalleryItem, PaginatedResponse, GalleryQuery, ApplyGalleryData } from '@/types'
 
+/* 后端返回的画廊类型 */
+interface BackendGalleryPhoto {
+  id: string
+  userId: string
+  postId: string | null
+  title: string
+  description: string | null
+  imageUrl: string
+  originalUrl: string | null
+  thumbnailUrl: string | null
+  metadata: any
+  category: string
+  status: string
+  pointsAwarded: number
+  likeCount: number
+  createdAt: string
+  updatedAt: string
+  user?: {
+    id: string
+    nickname: string
+    avatar: string | null
+  }
+}
+
+interface BackendPaginated<T> {
+  data: T[]
+  total: number
+  page: number
+  pageSize: number
+  totalPages: number
+}
+
+/* 转换后端画廊格式到前端格式 */
+function transformGalleryPhoto(bp: BackendGalleryPhoto): GalleryItem {
+  return {
+    id: bp.id,
+    title: bp.title,
+    description: bp.description || undefined,
+    imageUrl: bp.imageUrl,
+    thumbnailUrl: bp.thumbnailUrl || undefined,
+    originalUrl: bp.originalUrl || undefined,
+    authorId: bp.userId,
+    authorNickname: bp.user?.nickname || '',
+    authorAvatar: bp.user?.avatar || undefined,
+    category: bp.category,
+    likesCount: bp.likeCount,
+    isLiked: false,
+    fitsMeta: bp.metadata ? bp.metadata : undefined,
+    status: bp.status as 'pending' | 'approved' | 'rejected',
+    createdAt: bp.createdAt,
+    updatedAt: bp.updatedAt,
+  }
+}
+
 /* 画廊相关 API */
 
 /** 获取画廊列表 */
 export async function getGalleryList(query?: GalleryQuery) {
-  const { data } = await apiClient.get<PaginatedResponse<GalleryItem>>('/gallery', { params: query })
-  return data
+  const params: Record<string, any> = {
+    page: query?.page,
+    pageSize: query?.pageSize,
+    category: query?.category,
+    sortBy: query?.sort,
+    keyword: query?.keyword,
+  }
+  const { data } = await apiClient.get<BackendPaginated<BackendGalleryPhoto>>('/gallery', { params })
+  return {
+    items: (data.data || []).map(transformGalleryPhoto),
+    total: data.total,
+    page: data.page,
+    pageSize: data.pageSize,
+  } as PaginatedResponse<GalleryItem>
 }
 
 /** 获取画廊详情 */
 export async function getGalleryDetail(id: string) {
-  const { data } = await apiClient.get<GalleryItem>(`/gallery/${id}`)
-  return data
+  const { data } = await apiClient.get<BackendGalleryPhoto>(`/gallery/${id}`)
+  return transformGalleryPhoto(data)
 }
 
 /** 申请进入画廊 */

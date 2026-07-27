@@ -1,4 +1,4 @@
-﻿# 太空猎人 Space Hunter
+# 太空猎人 Space Hunter
 
 天文社区平台 — 天文爱好者的交流、分享与探索空间。
 
@@ -26,6 +26,8 @@ packages/
 | FITS 处理 | Python FastAPI + astropy + Pillow + numpy |
 | 部署 | Docker Compose（6 服务编排）+ Nginx 反向代理 |
 | 对象存储 | 腾讯云 COS（图片 + FITS 文件） |
+| 内容审核 | 关键词过滤 + 三级审核（pass/suspect/block） |
+| 图片资源 | ESA/Hubble + NOIRLab 官方天文档案（CC 协议） |
 | 知识图谱 | graphify（代码库结构可视化） |
 
 ## 快速开始
@@ -87,7 +89,7 @@ npm run build
 │   ├── server/                     # NestJS 后端
 │   │   └── src/
 │   │       ├── modules/            # 13 个业务模块
-│   │       ├── common/             # 通用组件
+│   │       ├── common/             # 通用组件（含内容审核）
 │   │       └── database/           # 数据库实体/迁移/种子
 │   ├── web/                        # Next.js 14 前端
 │   │   └── src/
@@ -137,7 +139,7 @@ graphify-out/graph.html
 graphify-out/GRAPH_REPORT.md
 ```
 
-图谱包含 1101 个节点、2110 条边、107 个社区，post-commit hook 会在每次提交后自动更新。
+图谱包含 1168 个节点、2222 条边、105 个社区，post-commit hook 会在每次提交后自动更新（基于 commit `5cf6de2`）。
 
 ## 版权声明
 

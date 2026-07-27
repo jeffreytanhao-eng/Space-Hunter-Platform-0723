@@ -8,6 +8,7 @@ import { Repository } from 'typeorm';
 import { Event } from '../../database/entities/event.entity';
 import { EventSignup } from '../../database/entities/event-signup.entity';
 import { AdminLog } from '../../database/entities/admin-log.entity';
+import { User } from '../../database/entities/user.entity';
 import { CreateEventDto } from './dto/create-event.dto';
 import { ReviewEventDto } from './dto/review-event.dto';
 import { QueryEventDto } from './dto/query-event.dto';
@@ -38,7 +39,6 @@ export class EventsService {
 
     const qb = this.eventRepo
       .createQueryBuilder('e')
-      .leftJoinAndSelect('e.creator', 'creator')
       .where('e.status = :status', { status: 'approved' });
 
     // 关键词搜索
@@ -61,6 +61,16 @@ export class EventsService {
     qb.skip(skip).take(pageSize);
 
     const [data, total] = await qb.getManyAndCount();
+
+    // 手动查询创建者信息并组装
+    const creatorIds = [...new Set(data.map(e => e.creatorId))];
+    if (creatorIds.length > 0) {
+      const users = await this.eventRepo.manager.getRepository(User).findByIds(creatorIds);
+      const userMap = new Map(users.map((u: any) => [u.id, u] as [any, any]));
+      (data as any[]).forEach(event => {
+        event.creator = userMap.get(event.creatorId) || null;
+      });
+    }
 
     return {
       data,
@@ -163,7 +173,6 @@ export class EventsService {
 
     const qb = this.eventRepo
       .createQueryBuilder('e')
-      .leftJoinAndSelect('e.creator', 'creator')
       .innerJoin('e.signups', 's', 's.user_id = :userId AND s.status = :signupStatus', {
         userId,
         signupStatus: 'signed',
@@ -175,6 +184,16 @@ export class EventsService {
     qb.skip(skip).take(pageSize);
 
     const [data, total] = await qb.getManyAndCount();
+
+    // 手动查询创建者信息并组装
+    const creatorIds = [...new Set(data.map(e => e.creatorId))];
+    if (creatorIds.length > 0) {
+      const users = await this.eventRepo.manager.getRepository(User).findByIds(creatorIds);
+      const userMap = new Map(users.map((u: any) => [u.id, u] as [any, any]));
+      (data as any[]).forEach(event => {
+        event.creator = userMap.get(event.creatorId) || null;
+      });
+    }
 
     return {
       data,
@@ -236,7 +255,6 @@ export class EventsService {
 
     const qb = this.eventRepo
       .createQueryBuilder('e')
-      .leftJoinAndSelect('e.creator', 'creator')
       .where('e.status = :status', { status: 'pending' })
       .orderBy('e.created_at', 'ASC');
 
@@ -244,6 +262,16 @@ export class EventsService {
     qb.skip(skip).take(pageSize);
 
     const [data, total] = await qb.getManyAndCount();
+
+    // 手动查询创建者信息并组装
+    const creatorIds = [...new Set(data.map(e => e.creatorId))];
+    if (creatorIds.length > 0) {
+      const users = await this.eventRepo.manager.getRepository(User).findByIds(creatorIds);
+      const userMap = new Map(users.map((u: any) => [u.id, u] as [any, any]));
+      (data as any[]).forEach(event => {
+        event.creator = userMap.get(event.creatorId) || null;
+      });
+    }
 
     return {
       data,

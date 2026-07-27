@@ -40,4 +40,20 @@ export default () => ({
     version: process.env.SWAGGER_VERSION || '0.1.0',
     enabled: process.env.SWAGGER_ENABLED !== 'false',
   },
+  // 内容审核配置
+  moderation: {
+    blockThreshold: parseInt(process.env.MODERATION_BLOCK_THRESHOLD || '2', 10),
+    suspectThreshold: parseInt(process.env.MODERATION_SUSPECT_THRESHOLD || '1', 10),
+    caseSensitive: process.env.MODERATION_CASE_SENSITIVE === 'true',
+  },
+  // 短信验证码配置
+  sms: {
+    provider: process.env.SMS_PROVIDER || 'aliyun',
+    accessKeyId: process.env.SMS_ACCESS_KEY_ID || '',
+    accessKeySecret: process.env.SMS_ACCESS_KEY_SECRET || '',
+    signName: process.env.SMS_SIGN_NAME || '太空猎人',
+    templateCode: process.env.SMS_TEMPLATE_CODE || '',
+    expireSeconds: parseInt(process.env.SMS_EXPIRE_SECONDS || '300', 10),
+    dailyLimit: parseInt(process.env.SMS_DAILY_LIMIT || '10', 10),
+  },
 });

@@ -30,40 +30,40 @@ interface MockPost {
 
 const mockPosts: MockPost[] = [
   { section: '观测分享', title: 'M42猎户座大星云最新拍摄 - 32小时累计曝光', content: '经过三个晴朗的夜晚，终于完成了M42猎户座大星云的深度拍摄。总曝光时间32小时，使用了H-alpha/OIII/SII窄带滤镜，后期采用HOO合成。星云的纤维状结构清晰可见，猎户座四边形星团也分辨得很好。\n\n设备：\n- 主镜：高桥TOA-130\n- 赤道仪：信达EQ6R Pro\n- 相机：ZWO ASI2600MM Pro\n- 滤镜：Antlia 3nm窄带套', images: [
-    { url: 'https://images.unsplash.com/photo-1462331940025-496dfbfc7564?w=1200', type: 'image' },
-    { url: 'https://images.unsplash.com/photo-1444703686981-a3abbc4d4fe3?w=1200', type: 'image' },
+    { url: 'https://esahubble.org/media/archives/images/screen/opo9410a.jpg', type: 'image' },
+    { url: 'https://esahubble.org/media/archives/images/screen/heic2505h.jpg', type: 'image' },
   ], tags: ['M42', '猎户座星云', '窄带摄影', '深空摄影'] },
   { section: '观测分享', title: '七夕之夜的银河拱桥 - 青海冷湖纪录', content: '今年七夕去了一趟青海冷湖，那里的暗夜条件真的太棒了！光污染等级几乎为1级，银河肉眼可见。这张银河拱桥是用20张照片拼接而成，前景是当地的雅丹地貌。\n\n拍摄参数：\n- 机身：索尼A7R5\n- 镜头：适马14mm f/1.8 DG DN\n- 参数：f/1.8, ISO 3200, 15s x 20张拼接', images: [
-    { url: 'https://images.unsplash.com/photo-1419242902214-272b3f66ee7a?w=1600', type: 'image' },
+    { url: 'https://noirlab.edu/public/media/archives/images/screen/noirlab2430b.jpg', type: 'image' },
   ], tags: ['银河', '星野摄影', '冷湖', '拼接'] },
   { section: '设备讨论', title: 'ZWO ASI2600 vs QHY268C 怎么选？用过的来聊聊', content: '最近想升级制冷相机，在ZWO ASI2600MC Pro和QHY268C之间纠结。两者都是APS-C画幅，都是2600万像素左右，价格也差不多。\n\n已了解的差异：\n1. ASI2600是背照式CMOS，QHY268C是前照式？\n2. 读出噪声ASI更低一些\n3. QHY的制冷效果好像更好\n\n有没有实际用过这两台的朋友，聊聊实际使用感受？主要拍行星还是深空？', images: null, tags: ['器材选购', 'ASI2600', 'QHY268C', '制冷相机'] },
   { section: '设备讨论', title: '赤道仪选信达EQ6R还是艾顿CEM70？', content: '预算5000左右，主镜大概5-7kg，主要拍深空。看了很多评测还是拿不定主意，希望各位大佬给点建议。\n\nEQ6R优点：载重更大、保有量高、配件多\nCEM70优点：双涡轮、精度据说更高、更轻\n\n有人说EQ6R载重够了但精度一般，也有人说CEM70精度虽高但载重有点虚标。到底选哪个啊？', images: null, tags: ['赤道仪', 'EQ6R', 'CEM70', '选购建议'] },
   { section: '天文知识', title: '【科普】为什么天文摄影要使用"窄带滤镜"？', content: '经常看到有人说窄带摄影，今天简单聊聊什么是窄带滤镜，以及为什么要用它。\n\n什么是窄带滤镜？\n窄带滤镜只允许非常窄的特定波长的光通过（通常只有几纳米），常见的有：\n- H-alpha：656.3nm（氢的红光发射线）\n- OIII：500.7nm（氧的蓝绿光发射线）\n- SII：672.4nm（硫的红光发射线）\n\n为什么要用窄带？\n1. 抑制光污染：城市里也能拍深空\n2. 提高对比度：突出星云的发射线\n3. 哈勃色：SII+Hα+OIII合成经典哈勃色', images: [
-    { url: 'https://images.unsplash.com/photo-1451187580459-43490279c0fa?w=1200', type: 'image' },
+    { url: 'https://esahubble.org/media/archives/images/screen/heic2505h.jpg', type: 'image' },
   ], tags: ['科普', '窄带滤镜', '天文知识', '入门'] },
   { section: '求助', title: '新手求助：为什么我的星点总是拖线？', content: '刚入门，第一次试拍就遇到问题了，长曝光星点全是拖线，看了很多教程还是没找到原因，来这里求大佬们帮忙看看。\n\n设备：小黑+EQ3D\n曝光：30秒 ISO1600\n已经做了：极轴镜粗对、平衡调了、导星还没买\n\n是我极轴没对准吗？还是平衡没调好？30秒就拖线这么厉害正常吗？', images: null, tags: ['新手求助', '星点拖线', '极轴校准', '导星'] },
   { section: '活动招募', title: '【8月英仙座流星雨】舟山群岛观测召集', content: '一年一度的英仙座流星雨又来了！今年极大值预计在8月12日晚，刚好是周末，计划组织一次舟山群岛的海边观测活动。\n\n时间：8月11日-13日（2晚）\n地点：舟山某海岛（具体报名后告知）\n费用：AA制，预计每人500-800元（含住宿）\n名额：限15人\n\n有意向的请在评论区留言或私信我！', images: [
-    { url: 'https://images.unsplash.com/photo-1504192010706-dd7f56945743?w=1200', type: 'image' },
+    { url: 'https://esahubble.org/media/archives/images/screen/heic1606a.jpg', type: 'image' },
   ], tags: ['流星雨', '英仙座', '线下活动', '观测活动'] },
   { section: '观测分享', title: '土星冲日实拍 - 卡西尼缝清晰可见', content: '今年土星冲日拍的，视宁度不错，卡西尼缝清清楚楚！土星的六边形风暴也隐约可见。\n\n拍摄参数：\n- 望远镜：星特朗C11 XLT\n- 巴洛：Tele Vue 2.5x Powermate\n- 相机：ASI224MC\n- 视频：3分钟，叠加10000帧\n\n后期用AutoStakkert!3叠加，Registax 6锐化。', images: [
-    { url: 'https://images.unsplash.com/photo-1614314262735-99375e122484?w=800', type: 'image' },
+    { url: 'https://esahubble.org/media/archives/images/screen/heic1917a.jpg', type: 'image' },
   ], tags: ['土星', '行星摄影', '冲日', '卡西尼缝'] },
   { section: '天文知识', title: '【深度】梅西耶目录：110个天体背后的故事', content: '梅西耶目录是天文爱好者最熟悉的深空天体表，包含110个明亮的深空天体。但你知道吗？这个目录的初衷竟然是为了"避免认错彗星"！\n\n查尔斯·梅西耶是18世纪法国天文学家，他一生都在寻找彗星。但他经常把一些模糊的星云状天体误认为是彗星，于是他把这些"不是彗星的模糊天体"记录下来，就成了梅西耶目录。\n\n有趣的冷知识：\n- M40是一对双星，因为梅西耶误以为它是星云\n- M102其实和M101是同一个天体，记录重复了\n- M45（昴星团）其实肉眼可见，完全不需要望远镜', images: null, tags: ['梅西耶', '天文史', '科普', '深空天体'] },
   { section: '求助', title: '摄影头导星一直丢星怎么办？', content: '换了ASI120MM-Mini导星相机，但是导星总是不稳定，十几分钟就丢星一次，误差曲线特别难看。\n\n配置：\n- 导星镜：50mm寻星镜改的\n- 相机：ASI120MM-Mini\n- 软件：PHD2\n- 赤道仪：EQ6R\n\nPHD2里的导星误差总是在1-2角秒波动，有时候还会突然跳到5角秒以上。是导星镜焦距太短了吗？还是极轴没对准？', images: null, tags: ['导星', 'PHD2', 'ASI120MM', '求助'] },
   { section: '设备讨论', title: '分享一下我的"暗房"——阳台天文台改造', content: '住高层公寓，没有条件弄真正的天文台，只能在阳台上折腾。分享一下我的布置经验，给同样住城市的同好参考。\n\n1. 阳台方位：朝南偏东，避开对面楼的灯光\n2. 遮光处理：用黑布把阳台封起来，减少室内光干扰\n3. 电源：外接了一个防水插板，从室内走线\n4. 电脑控制：用无线网桥把电脑信号传到阳台\n5. 设备收纳：做了个带锁的柜子，不下雨的时候推出来\n\n虽然条件有限，但至少不用出门就能拍，对上班族来说够用了。', images: [
-    { url: 'https://images.unsplash.com/photo-1465101162946-4377e57745c3?w=1000', type: 'image' },
+    { url: 'https://esahubble.org/media/archives/images/screen/heic0706a.jpg', type: 'image' },
   ], tags: ['阳台党', '经验分享', '设备改造', '城市观测'] },
   { section: '观测分享', title: 'Andromeda Galaxy M31 - 我的第一个深空目标', content: '入坑三个月，终于拍出了第一张能看的深空照片——仙女座大星系M31！虽然和大佬们的比还差很远，但自己已经很满意了。\n\n设备：\n- 望远镜：小黑（信达150/750）\n- 赤道仪：EQ3D（电跟）\n- 相机：佳能60Da改机\n- 总曝光：约2小时（30s x 240张）\n\n感谢论坛里各位大佬的指导，从对极轴到后期处理都是在这里学的！', images: [
-    { url: 'https://images.unsplash.com/photo-1506318137071-a8e063b4bec0?w=1200', type: 'image' },
+    { url: 'https://esahubble.org/media/archives/images/screen/heic1502a.jpg', type: 'image' },
   ], tags: ['M31', '仙女座星系', '新手作品', '深空摄影'] },
 ];
 
 const mockGallery = [
-  { title: '猎户座大星云 M42', description: '窄带 HOO 合成，32 小时曝光', imageUrl: 'https://images.unsplash.com/photo-1462331940025-496dfbfc7564?w=1600', category: 'nebula' },
-  { title: '银河拱桥', description: '青海冷湖银河季拍摄', imageUrl: 'https://images.unsplash.com/photo-1419242902214-272b3f66ee7a?w=1600', category: 'milkyway' },
-  { title: '土星特写', description: '冲日拍摄，卡西尼缝可见', imageUrl: 'https://images.unsplash.com/photo-1614314262735-99375e122484?w=1000', category: 'planet' },
-  { title: '昴星团 M45', description: '蓝色反射星云', imageUrl: 'https://images.unsplash.com/photo-1506318137071-a8e063b4bec0?w=1200', category: 'cluster' },
-  { title: '玫瑰星云 NGC2237', description: '情人节的宇宙礼物', imageUrl: 'https://images.unsplash.com/photo-1451187580459-43490279c0fa?w=1200', category: 'nebula' },
+  { title: '马头星云 IC434', description: '哈勃拍摄的经典暗星云', imageUrl: 'https://esahubble.org/media/archives/images/screen/heic0309a.jpg', category: 'nebula' },
+  { title: '银河拱桥', description: '青海冷湖银河季拍摄', imageUrl: 'https://noirlab.edu/public/media/archives/images/screen/noirlab2430b.jpg', category: 'milkyway' },
+  { title: '土星特写', description: '冲日拍摄，卡西尼缝可见', imageUrl: 'https://esahubble.org/media/archives/images/screen/heic1917a.jpg', category: 'planet' },
+  { title: '昴星团 M45', description: '蓝色反射星云', imageUrl: 'https://noirlab.edu/public/media/archives/images/screen/noao-m45.jpg', category: 'cluster' },
+  { title: '玫瑰星云 NGC2237', description: '情人节的宇宙礼物', imageUrl: 'https://esahubble.org/media/archives/images/screen/heic2505h.jpg', category: 'nebula' },
 ];
 
 const mockComments = [

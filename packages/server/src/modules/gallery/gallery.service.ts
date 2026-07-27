@@ -9,6 +9,7 @@ import { GalleryPhoto } from '../../database/entities/gallery-photo.entity';
 import { Post } from '../../database/entities/post.entity';
 import { AdminLog } from '../../database/entities/admin-log.entity';
 import { FitsAsset } from '../../database/entities/fits-asset.entity';
+import { User } from '../../database/entities/user.entity';
 import { PointsService } from '../points/points.service';
 import { CosService } from '../upload/cos.service';
 import { RedisService } from '../redis/redis.service';
@@ -47,7 +48,6 @@ export class GalleryService {
 
     const qb = this.galleryRepo
       .createQueryBuilder('g')
-      .leftJoinAndSelect('g.user', 'user')
       .where('g.status = :status', { status: 'approved' });
 
     // 分类筛选
@@ -75,6 +75,16 @@ export class GalleryService {
     qb.skip(skip).take(pageSize);
 
     const [data, total] = await qb.getManyAndCount();
+
+    // 手动查询用户信息并组装
+    const userIds = [...new Set(data.map(p => p.userId))];
+    if (userIds.length > 0) {
+      const users = await this.galleryRepo.manager.getRepository(User).findByIds(userIds);
+      const userMap = new Map(users.map((u: any) => [u.id, u] as [any, any]));
+      (data as any[]).forEach(photo => {
+        photo.user = userMap.get(photo.userId) || null;
+      });
+    }
 
     return {
       data,
@@ -260,7 +270,6 @@ export class GalleryService {
 
     const qb = this.galleryRepo
       .createQueryBuilder('g')
-      .leftJoinAndSelect('g.user', 'user')
       .where('g.status = :status', { status: 'pending' })
       .orderBy('g.created_at', 'ASC');
 
@@ -268,6 +277,16 @@ export class GalleryService {
     qb.skip(skip).take(pageSize);
 
     const [data, total] = await qb.getManyAndCount();
+
+    // 手动查询用户信息并组装
+    const userIds = [...new Set(data.map(p => p.userId))];
+    if (userIds.length > 0) {
+      const users = await this.galleryRepo.manager.getRepository(User).findByIds(userIds);
+      const userMap = new Map(users.map((u: any) => [u.id, u] as [any, any]));
+      (data as any[]).forEach(photo => {
+        photo.user = userMap.get(photo.userId) || null;
+      });
+    }
 
     return {
       data,
