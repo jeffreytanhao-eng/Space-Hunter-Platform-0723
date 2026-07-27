@@ -263,6 +263,30 @@ export class GalleryService {
     return { downloadUrl };
   }
 
+  /** 画廊点赞切换（Redis 标记防重复，DB like_count 持久化） */
+  async toggleLike(userId: string, photoId: string): Promise<{ liked: boolean; likesCount: number }> {
+    const photo = await this.galleryRepo.findOne({ where: { id: photoId } });
+    if (!photo) {
+      throw new NotFoundException('画廊照片不存在');
+    }
+
+    const likeKey = `gallery:like:${userId}:${photoId}`;
+    const liked = await this.redisService.get(likeKey);
+
+    if (liked) {
+      // 取消点赞
+      await this.redisService.del(likeKey);
+      photo.likeCount = Math.max(0, photo.likeCount - 1);
+    } else {
+      // 点赞（标记 1 年过期，避免长期占用）
+      await this.redisService.set(likeKey, '1', 60 * 60 * 24 * 365);
+      photo.likeCount = photo.likeCount + 1;
+    }
+
+    await this.galleryRepo.save(photo);
+    return { liked: !liked, likesCount: photo.likeCount };
+  }
+
   /** 获取待审核画廊列表（供 Admin 模块调用） */
   async getPending(query: { page?: number; pageSize?: number }): Promise<PaginatedResult<GalleryPhoto>> {
     const page = query.page || 1;

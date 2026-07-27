@@ -1,8 +1,8 @@
-﻿﻿﻿﻿﻿﻿﻿'use client'
+﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿'use client'
 
 import { useState } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { getGalleryList, applyGallery, downloadOriginal } from '@/services/gallery'
+import { getGalleryList, applyGallery, downloadOriginal, toggleGalleryLike } from '@/services/gallery'
 import { getPosts } from '@/services/posts'
 import { Header } from '@/components/layout/header'
 import { Footer } from '@/components/layout/footer'
@@ -75,6 +75,32 @@ export default function GalleryPage() {
     onSuccess: () => {
       setApplyStatus('success')
       queryClient.invalidateQueries({ queryKey: ['gallery'] })
+    },
+  })
+
+  /* 画廊点赞（乐观更新） */
+  const likeMutation = useMutation({
+    mutationFn: (id: string) => toggleGalleryLike(id),
+    onMutate: async (id: string) => {
+      const queryKey = ['gallery', page, category, sort, keyword]
+      const prev = queryClient.getQueryData(queryKey)
+      queryClient.setQueryData(queryKey, (old: any) => {
+        if (!old) return old
+        return {
+          ...old,
+          items: old.items.map((it: any) =>
+            it.id === id
+              ? { ...it, isLiked: !it.isLiked, likesCount: it.isLiked ? it.likesCount - 1 : it.likesCount + 1 }
+              : it
+          ),
+        }
+      })
+      return { prev }
+    },
+    onError: (_e: string, _id: string, ctx: any) => {
+      if (ctx?.prev) {
+        queryClient.setQueryData(['gallery', page, category, sort, keyword], ctx.prev)
+      }
     },
   })
 
@@ -220,10 +246,13 @@ export default function GalleryPage() {
                         <span className="text-xs text-star-dim">{item.authorNickname}</span>
                       </div>
                       <div className="flex items-center gap-2 text-xs text-star-dim">
-                        <span className="flex items-center gap-1">
-                          <Heart className={`h-3 w-3 ${item.isLiked ? 'text-red-400' : ''}`} />
+                        <button
+                          onClick={(e) => { e.stopPropagation(); isAuthenticated && likeMutation.mutate(item.id) }}
+                          className={`flex items-center gap-1 rounded px-1 py-0.5 transition-colors ${item.isLiked ? 'text-red-400' : 'hover:text-red-400'} ${!isAuthenticated ? 'cursor-not-allowed opacity-60' : 'cursor-pointer'}`}
+                        >
+                          <Heart className={`h-3 w-3 ${item.isLiked ? 'fill-current' : ''}`} />
                           {item.likesCount}
-                        </span>
+                        </button>
                       </div>
                     </div>
                   </div>
@@ -342,10 +371,13 @@ export default function GalleryPage() {
                 <p className="mt-1 text-sm text-star-dim">{items[lightboxIndex].description}</p>
               )}
               <div className="mt-2 flex items-center gap-4 text-sm text-star-dim">
-                <span className="flex items-center gap-1">
-                  <Heart className={`h-4 w-4 ${items[lightboxIndex].isLiked ? 'text-red-400' : ''}`} />
+                <button
+                  onClick={() => isAuthenticated && likeMutation.mutate(items[lightboxIndex].id)}
+                  className={`flex items-center gap-1 rounded px-2 py-1 transition-colors ${items[lightboxIndex].isLiked ? 'text-red-400' : 'hover:text-red-400'} ${!isAuthenticated ? 'cursor-not-allowed opacity-60' : 'cursor-pointer'}`}
+                >
+                  <Heart className={`h-4 w-4 ${items[lightboxIndex].isLiked ? 'fill-current' : ''}`} />
                   {items[lightboxIndex].likesCount}
-                </span>
+                </button>
                 <Badge variant="cyan">{categories.find(c => c.value === items[lightboxIndex].category)?.label || items[lightboxIndex].category}</Badge>
               </div>
             </div>

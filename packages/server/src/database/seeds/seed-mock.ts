@@ -30,8 +30,7 @@ interface MockPost {
 
 const mockPosts: MockPost[] = [
   { section: '观测分享', title: 'M42猎户座大星云最新拍摄 - 32小时累计曝光', content: '经过三个晴朗的夜晚，终于完成了M42猎户座大星云的深度拍摄。总曝光时间32小时，使用了H-alpha/OIII/SII窄带滤镜，后期采用HOO合成。星云的纤维状结构清晰可见，猎户座四边形星团也分辨得很好。\n\n设备：\n- 主镜：高桥TOA-130\n- 赤道仪：信达EQ6R Pro\n- 相机：ZWO ASI2600MM Pro\n- 滤镜：Antlia 3nm窄带套', images: [
-    { url: 'https://esahubble.org/media/archives/images/screen/opo9410a.jpg', type: 'image' },
-    { url: 'https://esahubble.org/media/archives/images/screen/heic2505h.jpg', type: 'image' },
+    { url: 'https://esahubble.org/media/archives/images/large/opo9410a.jpg', type: 'image' },
   ], tags: ['M42', '猎户座星云', '窄带摄影', '深空摄影'] },
   { section: '观测分享', title: '七夕之夜的银河拱桥 - 青海冷湖纪录', content: '今年七夕去了一趟青海冷湖，那里的暗夜条件真的太棒了！光污染等级几乎为1级，银河肉眼可见。这张银河拱桥是用20张照片拼接而成，前景是当地的雅丹地貌。\n\n拍摄参数：\n- 机身：索尼A7R5\n- 镜头：适马14mm f/1.8 DG DN\n- 参数：f/1.8, ISO 3200, 15s x 20张拼接', images: [
     { url: 'https://noirlab.edu/public/media/archives/images/screen/noirlab2430b.jpg', type: 'image' },
@@ -59,11 +58,11 @@ const mockPosts: MockPost[] = [
 ];
 
 const mockGallery = [
-  { title: '马头星云 IC434', description: '哈勃拍摄的经典暗星云', imageUrl: 'https://esahubble.org/media/archives/images/screen/heic0309a.jpg', category: 'nebula' },
-  { title: '银河拱桥', description: '青海冷湖银河季拍摄', imageUrl: 'https://noirlab.edu/public/media/archives/images/screen/noirlab2430b.jpg', category: 'milkyway' },
-  { title: '土星特写', description: '冲日拍摄，卡西尼缝可见', imageUrl: 'https://esahubble.org/media/archives/images/screen/heic1917a.jpg', category: 'planet' },
-  { title: '昴星团 M45', description: '蓝色反射星云', imageUrl: 'https://noirlab.edu/public/media/archives/images/screen/noao-m45.jpg', category: 'cluster' },
-  { title: '玫瑰星云 NGC2237', description: '情人节的宇宙礼物', imageUrl: 'https://esahubble.org/media/archives/images/screen/heic2505h.jpg', category: 'nebula' },
+  { title: '马头星云 IC434', description: '哈勃拍摄的经典暗星云', imageUrl: 'https://esahubble.org/media/archives/images/large/heic0309a.jpg', category: 'deep_sky' },
+  { title: '银河拱桥', description: '青海冷湖银河季拍摄', imageUrl: 'https://noirlab.edu/public/media/archives/images/screen/noirlab2430b.jpg', category: 'starfield' },
+  { title: '土星特写', description: '冲日拍摄，卡西尼缝可见', imageUrl: 'https://esahubble.org/media/archives/images/large/heic1917a.jpg', category: 'solar_system' },
+  { title: '昴星团 M45', description: '蓝色反射星云', imageUrl: 'https://noirlab.edu/public/media/archives/images/screen/noao-m45.jpg', category: 'deep_sky' },
+  { title: '玫瑰星云 NGC2237', description: '情人节的宇宙礼物', imageUrl: 'https://esahubble.org/media/archives/images/large/heic2505h.jpg', category: 'deep_sky' },
 ];
 
 const mockComments = [
@@ -193,7 +192,14 @@ async function run() {
     let galleryCount = 0;
     for (const mg of mockGallery) {
       const existing = await queryRunner.query(`SELECT id FROM gallery_photos WHERE title = $1`, [mg.title]);
-      if (existing.length > 0) continue;
+      if (existing.length > 0) {
+        // 已存在：迁移分类值与图片 URL（修复旧 seed 遗留的 nebula/milkyway/planet/cluster 与 screen 残缺图）
+        await queryRunner.query(
+          `UPDATE gallery_photos SET category = $1, image_url = $2 WHERE id = $3`,
+          [mg.category, mg.imageUrl, existing[0].id]
+        );
+        continue;
+      }
 
       const userId = userIds[Math.floor(Math.random() * userIds.length)];
       await queryRunner.query(

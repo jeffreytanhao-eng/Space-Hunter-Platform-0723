@@ -86,4 +86,16 @@ export class GalleryController {
   ) {
     return this.galleryService.downloadOriginal(id, userId);
   }
+
+  @Post(':id/like')
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: '画廊点赞切换' })
+  @ApiParam({ name: 'id', description: '画廊照片 ID' })
+  async toggleLike(
+    @CurrentUser('id') userId: string,
+    @Param('id') id: string,
+  ) {
+    return this.galleryService.toggleLike(userId, id);
+  }
 }

@@ -1,279 +1,114 @@
-# Space Hunter 天文社区 Phase 0 实现规格
+# Space Hunter 天文社区 Phase 0 实现规格 v2.0（现状对齐版）
 
-> **文档版本**:v1.1 (2026-07-20)
-> **关联文档**:
-> - [decisions.md](./decisions.md) — 架构决策记录(ADR),所有技术选型冻结于此
-> - [fits-technical-design.md](./fits-technical-design.md) — FITS 专业图像处理技术方案
-> - [traceability.md](./traceability.md) — 需求-任务-验收三向追溯矩阵
-> - [tasks.md](./tasks.md) / [checklist.md](./checklist.md) — 任务拆解与验收清单
-> **冻结状态**:本文档涉及的 Requirement 在开发期原则上不变更;若需变更,走 traceability.md §14 维护流程。
-
-## P0/P1/P2 分级表
-
-> Phase 0 必须完成全部 P0;P1 可视进度延后至 Phase 1;P2 明确不做(见 [ADR-009](./decisions.md#adr-009phase-0-暂不实现的功能清单显式排除))。
-> 分级是产品决策,与开发优先级一致;tasks.md 的 Phase M0-M6 主路径仅覆盖 P0,P1 任务可裁剪。
-
-| Requirement | 分级 | 理由 |
-|---|---|---|
-| 用户系统与认证(手机号+微信+JWT) | **P0** | 无认证无法使用任何功能 |
-| 论坛核心(发帖/回帖/点赞/搜索) | **P0** | 社区主线,验证内容生产 |
-| 专业天文图像处理(FITS/TIFF/RAW) | **P0** | 项目差异化核心,不做无竞争力 |
-| Follow 与社交基础 | **P1** | 论坛跑通后才有意义,可延后 1-2 周 |
-| 积分系统 | **P0** | 内容生产激励闭环核心 |
-| 荣耀画廊 | **P0** | 天文社区差异化,与积分强绑定 |
-| 活动系统 | **P1** | 计划书已标 P1,M3 可裁剪至 Phase 1 |
-| 微信小程序 | **P1** | 计划书标 P0 但实际可先上网页版;若 12 周紧张,小程序 M3 整体延后 |
-| 后台管理系统 | **P0** | 无 Admin 内容无法审核,无法上线 |
-| 网页论坛前端设计规范 | **P0** | 主入口视觉与体验直接决定用户留存 |
-| 非功能与部署(安全/CDN/Docker) | **P0** | 上线必备 |
-
-**裁剪规则**:
-- 若 M2 完成时进度落后 ≥ 1 周,立即将 P1 任务整体后移,集中资源保 P0。
-- 小程序延后时,API 层必须仍按规格实现(预留前端调用),不影响后端工期。
-- 活动系统延后时,数据库表 `events`/`event_signups` 仍按 spec 创建,仅不实现业务接口与前端。
+**版本**：v2.0（替代 v1.0）
+**日期**：2026-07-27
+**性质**：项目已上线运行，本版将开发文档与代码现状对齐，明确剩余收尾工作；FITS 专业图像处理链路标记为 **DEFERRED（重要但暂缓）**。
 
 ## Why
-Space Hunter 是面向国内天文爱好者的垂直社区平台。Phase 0（MVP）需要从零建立基础社区闭环（内容生产 + 积分激励 + 活动组织 + 荣耀画廊），验证内容生产与用户活跃度。当前为全新项目，无历史代码，需要统一规范指导网页论坛、微信小程序、后端 API、管理后台的开发，并为未来独立 App、第三方登录、支付商城预留干净扩展点。
+Space Hunter 天文社区 Phase 0 已上线运行（spacehuntter.com），主体功能完成。原 v1.0 规格按"全新项目"编写，与代码现实严重脱节（仍写"NestJS 或 FastAPI"、无设备模块、把已完成模块当待开发）。本版 v2.0 替代 v1.0，用于：冻结已落地的技术方案、记录已实现基线、界定剩余收尾工作，并显式将 FITS 链路标记为 DEFERRED 以避免其阻塞当前收尾。
+
+## 技术方案（已冻结，代码层已定版）
+- **后端**：NestJS 10 + TypeORM + PostgreSQL 15 + Redis 7
+- **前端**：Next.js 14 App Router + React 18 + Tailwind CSS
+- **小程序**：Taro 4 + React 18
+- **FITS Worker**：Python FastAPI + astropy + Pillow + numpy + rawpy + tifffile（业务逻辑 DEFERRED）
+- **部署**：Docker Compose 6 服务编排（nginx → backend → web → postgres → redis → fits-worker）+ Nginx 反向代理 + HTTPS
+- **对象存储**：腾讯云 COS + CDN
+- **认证**：JWT + Passport + 短信验证码 + 微信登录
+- **内容审核**：关键词过滤 + 三级审核（pass/suspect/block）
+- **国际化**：i18n（useTranslation）
 
 ## What Changes
-- 新增统一后端 API 服务（Node.js + NestJS）+ WebSocket 预留通道
-- 新增网页论坛前端（Next.js 14 App Router + Tailwind + shadcn/ui）
-- 新增微信小程序前端（Taro 3.x）
-- 新增集成式管理后台（嵌入 Next.js）
-- 新增数据持久层（PostgreSQL 15 主库 + Redis 7 缓存/会话/积分计数）
-- 新增文件存储方案（腾讯云 COS 或阿里云 OSS + CDN）
-- 新增专业天文图像格式支持（FITS、TIFF、RAW 等）：后端预览图生成、FITS header 元数据解析、原始文件下载
-- 新增网页论坛太空科技感前端设计系统（深空配色、星点动效、发光组件、流畅交互、沉浸式画廊）
-- 新增 Docker 化部署 + Nginx + 国内云环境配置
-- 配置 HTTPS、域名、WAF、基础监控
-- 预留扩展点：独立 App（同后端 API）、Google/Apple 登录、实时通知（WebSocket）、支付/商城（积分交易与商品表）
+- 将 v1.0"全新项目"假设改为"现状对齐"
+- 冻结技术方案为 NestJS + Python FastAPI worker 双服务架构
+- 将已完成模块从"待开发"重构为"已实现基线"（仅记录，非开发任务）
+- 新增当前剩余收尾工作：设备模块接口预留补全、小程序补全、部署稳定化、文档对齐
+- 将 FITS 专业图像处理链路标记为 DEFERRED（hold），不列入当前开发任务
 
 ## Impact
-- 受影响规格（全新能力域）：
-  - 用户系统与认证
-  - 论坛核心
-  - Follow 与社交基础
-  - 积分系统
-  - 荣耀画廊
-  - 活动系统
-  - 微信小程序（轻量版）
-  - 后台管理系统
-  - 非功能与部署
-  - 专业天文图像处理
-  - 网页论坛前端设计规范
-- 受影响代码（新建）：
-  - `/server`（NestJS 后端，含 RESTful API + WebSocket 预留 + Admin 接口）
-  - `/web`（Next.js 14 网页论坛 + 集成 Admin 后台）
-  - `/miniapp`（Taro 3.x 微信小程序）
-  - `/docker`、`/deployments`（部署脚本与配置）
-  - `/docs`（Swagger/OpenAPI 接口文档 + 用户/管理员手册）
+- 替代：`.trae/specs/implement-space-hunter-phase0/` v1.0 规格文档
+- 现状基线：见下方"已实现基线"章节
+- 当前剩余工作：设备模块接口预留补全、小程序轻量版补全、部署稳定化与清理、文档对齐
+- Deferred：FITS 专业图像处理链路（NestJS 提交任务编排 + Python worker 解析/预览/调度）
 
-## ADDED Requirements
+## 已实现基线（现状记录，非本规格新增任务）
+以下能力已在代码中实现并上线，仅作记录：
+- **用户系统**：手机号+短信 / 微信 OAuth / JWT / 个人资料 / 隐私设置
+- **论坛核心**：5 默认板块 / 发帖(文字+多图) / 回帖 / 评论 / 点赞 / 搜索 / 分类标签 / 板块申请
+- **Follow**：关注/取关 / 个人主页 / 动态流
+- **积分系统**：赚取规则引擎 / 余额明细 / 兑换 / 交易流水 / 并发控制(事务+行锁+Redis分布式锁+幂等键)
+- **荣耀画廊**：申请 / 审核 / 列表浏览(分类/排序/搜索) / 通过后发积分
+- **活动系统**：创建/审核/列表/详情/报名/官方活动/我的活动
+- **后台管理**：登录权限 / 内容审核 / 用户管理 / 积分管理 / 统计看板 / 板块管理 / admin_logs
+- **小程序(Taro 4)**：基础框架 + 微信登录 + 若干页面 + API 服务
+- **非功能**：图片上传(COS+CDN) / 安全防护 / DB 迁移种子 / Docker 部署 / HTTPS / 监控
+- **国际化**：i18n
+- **太空科技感前端设计**：Starfield 组件等已落地（实体不透明深色卡片 + 发光边框，无半透明玻璃拟态）
+- **内容运营**：ESA/Hubble + NOIRLab 官方天文档案图片（CC 协议）作为冷启动内容填充（有意为之，非技术债）
 
-### Requirement: 用户系统与认证
-系统 SHALL 支持手机号 + 短信验证码登录/注册（对接国内短信服务商）。
-系统 SHALL 支持微信 OAuth 扫码登录（网页端 + 小程序端）。
-系统 SHALL 提供用户个人资料管理（昵称、头像、个人简介、天文兴趣标签、设备信息）。
-系统 SHALL 提供隐私设置（谁可查看我的资料/动态）。
-系统 SHALL 预留第三方登录抽象层（Google/Apple 接口占位，0 信任设计）。
-系统 SHALL 对所有受保护接口启用 JWT 认证与权限校验。
+## ADDED Requirements（当前剩余收尾工作）
 
-#### Scenario: 手机号注册登录
-- **WHEN** 用户输入手机号并获取/提交短信验证码
-- **THEN** 系统校验验证码有效性，若手机号未注册则创建用户，已注册则登录，返回 JWT token
+### Requirement: 设备模块接口预留补全
+系统 SHALL 补全设备模块的 NestJS module/controller/service（当前仅数据库实体已建，无模块路由）。
+系统 SHALL 实现设备认证与绑定接口：`/devices/bind`、`/devices/unbind`、`/devices/me`。
+系统 SHALL 实现设备上传与查询接口：`/devices/upload`（device_token 鉴权，写记录入队 Redis Stream）、`/devices/uploads`（分页）、`/devices/uploads/{id}/tasks`。
+系统 SHALL 实现 `/internal/processing/callback` Worker 回调入口（写 result + 触发积分）。
+系统 SHALL 在 `points_transactions.source` 枚举预留 `device_upload`、`device_ai_score_high`、`device_ai_detect_rare`。
+系统 SHALL Phase 0 不实现实际处理逻辑（worker 收到任务直接置 done、result={}，仅验证链路连通）。
+系统 SHALL 预留 MQTT topic（阿里云 IoT Hub，Phase 0 不开通）。
 
-#### Scenario: 微信扫码登录
-- **WHEN** 用户使用微信扫描网页端二维码并授权
-- **THEN** 系统通过 OAuth 获取 openid，关联已有用户或创建新用户，登录并返回 token
+#### Scenario: 设备绑定
+- **WHEN** 用户提交 hardware_id 调用 `/devices/bind`
+- **THEN** 系统校验该 ID 未被绑定后下发 device_token
 
-#### Scenario: 完善个人资料
-- **WHEN** 登录用户编辑昵称、头像、简介、兴趣标签、设备信息并保存
-- **THEN** 系统更新用户资料并返回最新资料
+#### Scenario: 设备上传入队
+- **WHEN** 设备携带 device_token 上传文件至 `/devices/upload`
+- **THEN** 系统写 device_uploads 记录并入队 Redis Stream，Phase 0 worker 标记 done 后回调发积分
 
-### Requirement: 论坛核心
-系统 SHALL 初始化默认 5 个板块：观测分享、设备讨论、活动招募、天文知识、求助。
-系统 SHALL 支持用户发帖（文字 + 多图上传，普通图片单张 ≤10MB；专业天文格式 FITS/TIFF/RAW 见"专业天文图像处理"需求）。
-系统 SHALL 支持回帖、评论、点赞。
-系统 SHALL 支持帖子分类、标签、搜索。
-系统 SHALL 支持用户申请新板块，由管理员审核后上线。
-系统 SHALL 在帖子发布后按规则发放积分。
-**帖子审核状态语义**(详见 [ADR-004](./decisions.md#adr-004内容审核策略采用规则预过滤--人工终审)):`posts.status` 取值为 `pending_auto`(规则层待处理)、`pending_manual`(规则层判 suspect 进人工)、`published`(规则层 pass 或人工通过)、`rejected`(规则层 block 或人工拒绝)。"进入审核或直接发布"指:普通板块普通帖子上传后,规则层判定 `pass` 则直接 `published`,无需人工介入;判定 `suspect` 则进入 `pending_manual` 等待管理员审核;判定 `block` 直接 `rejected`。画廊申请与活动创建必须人工终审,不享受规则层直通。
-系统 SHALL 支持评论的层级为**单层**(评论直接挂在帖子下,不支持嵌套回复);多层嵌套延后至 Phase 1(见 [ADR-009](./decisions.md#adr-009phase-0-暂不实现的功能清单显式排除))。
-
-#### Scenario: 用户发帖
-- **WHEN** 登录用户选择板块，填写标题/正文并上传图片后提交
-- **THEN** 帖子进入审核或直接发布状态，发布后可见并触发积分奖励
-
-#### Scenario: 帖子搜索筛选
-- **WHEN** 用户输入关键词并选择板块/分类/标签筛选
-- **THEN** 系统返回匹配的帖子列表（支持分页）
-
-### Requirement: 专业天文图像处理
-系统 SHALL 支持上传专业天文图像格式：FITS（天文学界标准格式）、TIFF、RAW（CR2/NEF/ARW 等）。
-系统 SHALL 对专业格式文件调整大小限制（建议 FITS ≤100MB，TIFF/RAW ≤50MB，普通图片 ≤10MB）。
-系统 SHALL 对 FITS 文件由后端生成 PNG/JPEG 预览图用于网页与小程序展示（浏览器不直接渲染 FITS 原始文件）。
-系统 SHALL 解析并保留 FITS header 元数据（观测目标、设备、曝光时间、滤镜、赤经赤纬坐标等），在帖子/画廊详情中展示。
-系统 SHALL 提供专业格式原始文件下载链接，供其他爱好者下载分析处理。
-系统 SHALL 对专业格式上传给予差异化积分奖励（高于普通图片，鼓励专业内容生产）。
-**技术落地**:FITS/TIFF/RAW 处理由独立 Python 子服务(`/server-fits`)承担,通过 Redis 队列异步处理,主后端 NestJS 仅负责分流与状态查询。完整技术方案见 [fits-technical-design.md](./fits-technical-design.md),架构决策见 [ADR-002](./decisions.md#adr-002fits-专业天文图像处理采用独立-python-子服务)。
-**性能验收标准**:50MB FITS 文件预览图生成 P95 ≤ 30s,100MB FITS P95 ≤ 60s;worker 失败重试 ≤ 3 次后进入死信队列;处理失败不阻断上传,降级为"仅原始文件可下载"。
-**安全要求**:上传需 MIME + 扩展名 + 魔数三重校验;原始文件下载需鉴权(发帖者本人直接允许,其他用户要求帖子 `published`),5 分钟内同用户下载 ≤ 10 次。
-
-#### Scenario: 上传 FITS 文件
-- **WHEN** 用户上传 FITS 文件（≤100MB）
-- **THEN** 系统校验后存储原始文件，后端转换为 PNG/JPEG 预览图，解析 header 元数据；帖子展示预览图 + 元数据 + 原始文件下载链接
-
-#### Scenario: 浏览器展示 FITS 内容
-- **WHEN** 其他用户浏览含 FITS 的帖子
-- **THEN** 浏览器直接显示预览图（PNG/JPEG），不直接加载 FITS 原始文件，保障加载性能与体验
-
-#### Scenario: 下载原始 FITS 文件
-- **WHEN** 用户在帖子/画廊详情点击原始文件下载链接
-- **THEN** 系统返回 FITS 原始文件供下载
-
-### Requirement: Follow 与社交基础
-系统 SHALL 支持用户 Follow/Unfollow 其他用户（双向同步关系）。
-系统 SHALL 提供个人主页展示 Follow 列表与用户动态。
-系统 SHALL 提供关注动态流（简单时间线）。
-
-#### Scenario: 关注用户
-- **WHEN** 用户在他人主页点击 Follow
-- **THEN** 系统建立关注关系，关注者动态流中出现被关注者新动态
-
-### Requirement: 积分系统
-系统 SHALL 实现积分赚取规则引擎：发帖、上传照片、帖子获赞/精选、参与活动、照片通过画廊审核。
-系统 SHALL 提供积分余额查询 + 明细记录（赚取记录 + 消费记录）。
-系统 SHALL 支持积分兑换：虚拟徽章、头像框、论坛特权；预留望远镜折扣卡及线下服务兑换。
-系统 SHALL 提供积分交易流水供管理员查看与调整。
-系统 SHALL 保证积分变更的并发一致性：所有积分变更必须在数据库事务内完成并对 `users` 行加锁（`SELECT ... FOR UPDATE`），兑换操作额外使用 Redis 分布式锁防多端并发，所有积分接口必须支持基于 `Idempotency-Key` 的幂等（详见 [ADR-006](./decisions.md#adr-006积分变更必须走数据库事务--行锁)）。
-系统 SHALL 在积分兑换时校验余额，余额不足时拒绝并返回明确错误；扣减后 `points_balance` 字段不允许出现负值。
-
-#### Scenario: 积分赚取
-- **WHEN** 用户完成可奖励行为（如发帖通过审核、照片入画廊）
-- **THEN** 系统自动增加积分余额并写入 points_transactions（type=earn）
-
-#### Scenario: 积分兑换
-- **WHEN** 用户选择奖励并确认兑换且积分充足
-- **THEN** 系统扣减积分、发放奖励、记录交易（type=spend）；积分不足时拒绝并提示
-
-### Requirement: 荣耀画廊
-系统 SHALL 支持用户从已发布照片提交申请进入荣耀画廊。
-系统 SHALL 提供管理员审核画廊申请功能。
-系统 SHALL 支持画廊列表浏览（分类、按时间/点赞排序、搜索）。
-系统 SHALL 在审核通过后自动发放大量积分奖励。
-
-#### Scenario: 申请画廊
-- **WHEN** 用户选择已发布照片并提交画廊申请
-- **THEN** 系统创建 gallery_photos 记录（status=pending）等待审核
-
-#### Scenario: 画廊审核通过
-- **WHEN** 管理员审核通过画廊申请
-- **THEN** 照片进入画廊列表公开展示，系统自动向用户发放大量积分
-
-### Requirement: 活动系统
-系统 SHALL 支持用户创建活动（标题、描述、时间、地点、线上/线下、报名上限）并提交审核。
-系统 SHALL 提供管理员审核活动功能。
-系统 SHALL 支持活动列表、详情、报名功能。
-系统 SHALL 提供官方定期活动发布入口（线上 + 线下）。
-系统 SHALL 提供"我的活动"已报名列表。
-
-#### Scenario: 用户创建活动
-- **WHEN** 用户填写活动信息并提交
-- **THEN** 系统创建 events 记录（status=pending）等待管理员审核
-
-#### Scenario: 用户报名活动
-- **WHEN** 用户在审核通过的活动详情页点击报名且未满员
-- **THEN** 系统创建 event_signups 记录，报名人数 +1
-
-### Requirement: 微信小程序（轻量版）
-系统 SHALL 提供小程序基础框架 + 微信登录。
-系统 SHALL 支持小程序内浏览论坛帖子、发帖（文字 + 图片）。
-系统 SHALL 支持小程序 Follow 功能。
-系统 SHALL 支持小程序查看个人积分、荣耀画廊、活动列表。
-系统 SHALL 通过后端统一 API 实现小程序发帖自动同步到网页论坛（写入主库即可见）。
-**"实时可见"定义**（详见 [ADR-008](./decisions.md#adr-008小程序发帖实时可见定义为数据库提交--客户端刷新可见)）:
-- **数据层**:小程序 `POST /posts` 返回 `201 Created` 后,该帖在数据库立即可查。
-- **网页端感知**:用户**刷新页面或切换路由**时可见,Phase 0 不保证列表实时推送。
-- **列表缓存**:列表 API 允许 30s 边缘缓存、60s CDN 缓存,即最坏情况下他人 60 秒后可见。
-- **同一用户多端**:发帖者自己在其他端"我的发帖"刷新即可见。
+### Requirement: 小程序轻量版补全
+系统 SHALL 补全小程序核心功能页面与后端 API 对接：浏览帖子、发帖(文字+图片)、Follow、查看积分/画廊/活动列表。
+系统 SHALL 确保小程序发帖通过后端统一 API 同步到网页论坛（写入主库即可见）。
 
 #### Scenario: 小程序发帖同步
 - **WHEN** 用户在小程序发帖并提交
-- **THEN** 小程序调用后端 API 写入 posts 表，网页论坛实时可见该帖
+- **THEN** 小程序调用后端 API 写入 posts 表，网页论坛实时可见
 
-### Requirement: 后台管理系统
-系统 SHALL 提供管理员登录与权限控制（角色区分）。
-系统 SHALL 支持内容审核（帖子、画廊申请、活动创建、新板块申请）。
-系统 SHALL 支持用户管理（列表、封禁、积分调整、角色）。
-系统 SHALL 支持积分与交易管理（查看流水、调整）。
-系统 SHALL 提供数据统计看板（用户、帖子、画廊、活动）。
-系统 SHALL 支持论坛板块管理（启用/禁用/排序）。
-系统 SHALL 将 Admin 后台与用户端在**同域不同路径**隔离(`/admin/*` 路由组 + 中间件强制校验 `role=admin` JWT),Admin 使用独立 cookie(`admin_token`)与用户端 token 分离,Admin 写操作校验 `Origin` 头;非 admin 访问 `/admin/*` 直接返回 404(不暴露 Admin 路由存在)。详见 [ADR-007](./decisions.md#adr-007admin-后台与用户端共站但路由--守卫隔离)。
-系统 SHALL 对内容审核采用**规则预过滤 + 人工终审**双层策略:普通帖子上传后由规则层(关键词黑名单 + 腾讯云内容安全 API)自动判定 `pass/suspect/block`,`pass` 直接发布、`suspect` 进人工队列、`block` 直接拒绝;画廊申请与活动创建必须人工终审。详见 [ADR-004](./decisions.md#adr-004内容审核策略采用规则预过滤--人工终审)。
+### Requirement: 部署稳定化与清理
+系统 SHALL 清理根目录大量 `tmp_*.sh` 调试脚本，沉淀为正式部署脚本与文档。
+系统 SHALL 验证 HTTPS / Nginx / DB 部署稳定性。
+系统 SHALL 确认 server-fits 服务随 Docker 编排启动但业务逻辑 DEFERRED（仅 `/health` 端点可用，不处理任务）。
 
-#### Scenario: 管理员审核内容
-- **WHEN** 管理员在后台对待审核内容执行通过/拒绝
-- **THEN** 系统更新对应记录状态并写入 admin_logs
-
-### Requirement: 网页论坛前端设计规范
-系统 SHALL 采用太空科技感视觉风格：深空配色（深蓝/深紫/黑为主色调）、星点/星云点缀、霓虹蓝/青/紫高光，营造沉浸式太空氛围。
-系统 SHALL 使用实体不透明深色卡片 + 发光边框呈现内容（不使用半透明玻璃拟态效果，保证文字与背景对比度，确保可读性）。
-系统 SHALL 选用科技感无衬线字体，保证中文与数字/英文混排可读性。
-系统 SHALL 在首屏与关键页面加入克制的微动效（星空粒子背景、流星、滚动渐入、悬停反馈），不干扰主内容阅读与首屏性能。
-系统 SHALL 实现响应式布局，桌面与移动端自适应，兼容国内主流浏览器及微信内置浏览器。
-系统 SHALL 优化交互便利性：发帖/搜索/个人中心/积分中心等核心入口一键可达；关键操作有即时反馈；加载状态使用骨架屏；错误提示友好。
-系统 SHALL 优化图片浏览体验：画廊式预览、流畅切换、FITS 预览图清晰展示、大图沉浸式查看。
-系统 SHALL 以暗色主题为主（契合太空氛围），荣耀画廊页面突出天文美感与大图沉浸展示。
-系统 SHALL 保证视觉层次清晰、信息密度合理、键盘可访问性。
-系统 SHALL 控制首屏加载性能，避免动效拖慢首屏渲染（动效异步加载、首屏内容优先）。
-
-#### Scenario: 用户首次访问论坛
-- **WHEN** 用户打开论坛首页
-- **THEN** 呈现深空科技感视觉（深色背景 + 星点动效 + 发光卡片），首屏快速加载，核心入口（发帖/搜索/板块）清晰可达
-
-#### Scenario: 移动端浏览
-- **WHEN** 用户在手机或微信内置浏览器访问
-- **THEN** 页面自适应布局，交互元素尺寸适中可点，图片与文字清晰可读，动效不卡顿
-
-#### Scenario: 浏览荣耀画廊
-- **WHEN** 用户进入荣耀画廊
-- **THEN** 大图沉浸式展示，突出天文美感，支持流畅切换与 FITS 元数据查看
-
-#### Scenario: 加载与等待
-- **WHEN** 用户触发列表加载或图片上传
-- **THEN** 显示骨架屏与即时反馈，避免白屏与无响应状态
-
-### Requirement: 非功能与部署
-系统 SHALL 支持普通图片上传（常见格式，单张 ≤10MB）+ 对象存储 + CDN 加载（专业天文格式见"专业天文图像处理"需求）。
-系统 SHALL 提供基础安全：防 XSS、CSRF、SQL 注入；敏感操作二次确认；输入校验。
-系统 SHALL 提供数据库设计与迁移脚本 + 种子数据。
-系统 SHALL 支持 Docker 化部署 + 国内云（阿里云/腾讯云 ECS + SLB + CDN）+ Nginx。
-系统 SHALL 配置 HTTPS、域名、WAF、DDoS 防护、基础监控与日志（ELK 或云原生方案）。
-系统 SHALL 满足响应时间：论坛列表页 < 2s，图片加载使用 CDN。
-系统 SHALL 支持国内主流浏览器及微信内置浏览器。
-系统 SHALL 提供数据库定期备份与容灾。
-
-#### Scenario: 图片上传
-- **WHEN** 用户上传单张 ≤10MB 的常见格式图片
-- **THEN** 系统校验后存储至对象存储并返回 CDN URL，超限或格式不符时拒绝
+### Requirement: 文档对齐
+系统 SHALL 统一 4 份规格文档版本口径（主规格 / 计划书 / 设备模块补充规格 / 阿里云部署方案）。
+系统 SHALL 保持 README 与代码现状一致（已基本对齐，需定期校验）。
 
 ## MODIFIED Requirements
-无（全新项目，无既有需求被修改）。
+- v1.0"网页论坛前端设计规范"太空科技感设计：代码已实现（Starfield 等），从开发任务降级为现状记录
+- v1.0"专业天文图像处理"需求：整体改为 DEFERRED（见下）
+
+## DEFERRED Requirements（重要但暂缓，本阶段不实现）
+
+### Requirement: FITS 专业图像处理链路
+**状态**：DEFERRED（hold）。脚手架已搭，业务逻辑全 TODO。
+
+**已实现部分（不列入当前开发）**：
+- NestJS fits 模块：`getFitsStatus`（状态查询，前端轮询）/ `downloadOriginal`（COS 签名 URL 下载，含鉴权与频率限制 5分钟≤10次）/ `handleCallback`（接收 worker 回调，更新 FitsAsset 与 Post.hasFits）
+- Controller 3 端点：`GET /posts/:postId/fits-status`、`GET /posts/:postId/fits/original`（302）、`POST /internal/fits/callback`（内部 JWT 校验）
+- FitsAsset 实体 / Python worker 脚手架 / Dockerfile / 依赖清单（astropy/rawpy/tifffile/pillow/numpy/redis/cos-sdk）
+
+**未实现部分（DEFERRED）**：
+- NestJS 侧：发帖上传 FITS 后"提交处理任务给 worker"的编排逻辑（当前 fits.service 无 submit 方法）
+- Python worker：FITS 解析（`parse_fits` TODO）、RAW 解析（`parse_raw` TODO）、TIFF 解析（`parse_tiff` TODO）
+- Python worker：预览图生成（`generate_preview` TODO）
+- Python worker：任务调度（`Processor.process` TODO）
+- Python worker：回调 NestJS `/internal/fits/callback`
+
+**触发条件**：待硬件/数据来源明确后启动，或运营要求支持用户上传专业天文格式时启动。
+
+#### Scenario: 用户上传 FITS（当前 DEFERRED 行为）
+- **WHEN** 用户上传 FITS 文件
+- **THEN** 系统落库 FitsAsset 记录，但 worker 不处理（`pass`），previewUrl/metadata 保持空，状态卡在 pending；下载原始文件可用，但无预览图与元数据展示
 
 ## REMOVED Requirements
-无（全新项目，无既有需求被移除）。
-
-## 显式排除(Phase 0 不做)
-
-以下功能**明确不在 Phase 0 范围**,即使代码层预留接口也不实现业务逻辑。完整清单与理由见 [ADR-009](./decisions.md#adr-009phase-0-暂不实现的功能清单显式排除):
-
-- 评论嵌套(仅单层)/ 私信 / @提及 / 帖子编辑历史 / 多端消息已读同步 / 帖子收藏 / 话题超话 / 数据导出 / 推送通知
-- 付费会员 / 商城实物商品 / 直播短视频 / 独立 App
-- Google/Apple 登录(仅接口占位,不实现业务)
-- 实时通知(WebSocket,仅预留通道)
-
-上述功能在代码中**不留半成品**,只允许:
-- 数据库表字段预留(如 `users.push_token` 可不加)。
-- 接口路径占位返回 `501 Not Implemented`。
-
-checklist.md 不出现上述验收项。
+- v1.0"全新项目"假设：已移除，改为现状对齐
+- v1.0 中将已完成模块列为待开发任务：已移除，迁入"已实现基线"

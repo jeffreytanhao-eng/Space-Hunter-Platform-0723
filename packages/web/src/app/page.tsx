@@ -1,4 +1,4 @@
-﻿﻿﻿﻿﻿﻿﻿'use client'
+﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿'use client'
 
 import { useState, useEffect, Suspense } from 'react'
 import { useSearchParams } from 'next/navigation'
@@ -27,7 +27,6 @@ function HomeContent() {
   const tag = searchParams.get('tag') || undefined
 
   const [page, setPage] = useState(1)
-  const [activeSection, setActiveSection] = useState(sectionId || '')
   const [searchValue, setSearchValue] = useState(keyword || '')
   const pageSize = 10
 
@@ -43,12 +42,12 @@ function HomeContent() {
 
   /* 帖子列表 */
   const { data: postsData, isLoading } = useQuery({
-    queryKey: ['posts', page, activeSection, keyword, tag],
+    queryKey: ['posts', page, sectionId, keyword, tag],
     queryFn: () =>
       getPosts({
         page,
         pageSize,
-        sectionId: activeSection || undefined,
+        sectionId: sectionId || undefined,
         keyword,
         tag,
       }),
@@ -57,7 +56,7 @@ function HomeContent() {
   /* 切换板块时重置页码 */
   useEffect(() => {
     setPage(1)
-  }, [activeSection])
+  }, [sectionId])
 
   const totalPages = postsData ? Math.ceil(postsData.total / pageSize) : 1
 
@@ -101,28 +100,28 @@ function HomeContent() {
       <div className="border-b border-space-600 bg-space-800/50">
         <div className="mx-auto max-w-7xl px-4">
           <div className="flex gap-1 overflow-x-auto py-2 scrollbar-hide">
-            <button
-              onClick={() => setActiveSection('')}
+            <Link
+              href="/"
               className={`shrink-0 rounded-lg px-4 py-2 text-sm transition-colors ${
-                !activeSection
+                !sectionId
                   ? 'bg-neon-blue/15 text-neon-blue border border-neon-blue/30'
                   : 'text-star-dim hover:text-star-white hover:bg-space-700'
               }`}
             >
               {t('home.allSections')}
-            </button>
+            </Link>
             {sections?.map((section) => (
-              <button
+              <Link
                 key={section.id}
-                onClick={() => setActiveSection(section.id)}
+                href={`/?sectionId=${section.id}`}
                 className={`shrink-0 rounded-lg px-4 py-2 text-sm transition-colors ${
-                  activeSection === section.id
+                  sectionId === String(section.id)
                     ? 'bg-neon-blue/15 text-neon-blue border border-neon-blue/30'
                     : 'text-star-dim hover:text-star-white hover:bg-space-700'
                 }`}
               >
                 {section.name}
-              </button>
+              </Link>
             ))}
           </div>
         </div>
@@ -179,8 +178,10 @@ function HomeContent() {
                       {/* 标签 */}
                       {post.tags.length > 0 && (
                         <div className="mt-2 flex flex-wrap gap-1">
-                          {post.tags.slice(0, 3).map((t) => (
-                            <Badge key={t} variant="cyan">{t}</Badge>
+                          {post.tags.slice(0, 3).map((tg) => (
+                            <Link key={tg} href={`/?tag=${encodeURIComponent(tg)}`}>
+                              <Badge variant="cyan" className="hover:bg-neon-cyan/25 transition-colors cursor-pointer">{tg}</Badge>
+                            </Link>
                           ))}
                         </div>
                       )}

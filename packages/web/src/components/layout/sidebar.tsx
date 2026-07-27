@@ -1,18 +1,13 @@
-﻿﻿﻿﻿﻿﻿﻿'use client'
+'use client'
 
 import Link from 'next/link'
-import { useQuery } from '@tanstack/react-query'
-import { getSections } from '@/services/sections'
 import { useTranslation } from '@/lib/i18n'
-import { Hash, Flame } from 'lucide-react'
+import { Flame, Megaphone } from 'lucide-react'
 
-/* 侧边栏：板块列表 + 热门标签 */
+/* 侧边栏：热门标签 + 赞助商广告 */
+/* 说明：板块导航已与顶部导航栏统一（顶部 URL 驱动），侧边栏不再重复，改为聚焦标签筛选与商业广告 */
 export function Sidebar() {
   const { t } = useTranslation()
-  const { data: sections } = useQuery({
-    queryKey: ['sections'],
-    queryFn: getSections,
-  })
 
   /* 热门标签（后续从 API 获取，暂用占位数据） */
   const hotTags = [
@@ -26,36 +21,25 @@ export function Sidebar() {
     { name: '深空合成', count: 39 },
   ]
 
+  /* 赞助商广告位（天文观测望远镜 / 摄影器材） */
+  const ads = [
+    {
+      title: '星达 EQ6R Pro 赤道仪',
+      desc: '深空摄影旗舰之选 · 承重 20kg',
+      href: '#',
+      img: 'https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=Modern%20astronomical%20reflector%20telescope%20on%20mountain%20observatory%20under%20Milky%20Way%2C%20deep%20blue%20cyan%20neon%20glow%2C%20futuristic%20tech%20product%20advertisement%2C%20no%20text&image_size=portrait_4_3',
+    },
+    {
+      title: 'ZWO ASI2600MM Pro',
+      desc: '制冷黑白天文相机 · 深空利器',
+      href: '#',
+      img: 'https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=Premium%20astrophotography%20monochrome%20CMOS%20camera%20product%20showcase%2C%20dark%20space%20background%20with%20stars%2C%20purple%20blue%20neon%20accent%2C%20tech%20advertisement%2C%20no%20text&image_size=portrait_4_3',
+    },
+  ]
+
   return (
     <aside className="hidden w-64 shrink-0 lg:block">
       <div className="sticky top-14 space-y-4 p-4">
-        {/* 板块列表 */}
-        <div className="rounded-xl border-glow-purple bg-space-800 p-3">
-          <h3 className="mb-2 flex items-center gap-2 text-sm font-medium text-star-white">
-            <Hash className="h-4 w-4 text-neon-purple" />
-            {t('sidebar.sectionNav')}
-          </h3>
-          <nav className="space-y-0.5">
-            {sections ? (
-              sections.map((section) => (
-                <Link
-                  key={section.id}
-                  href={`/?sectionId=${section.id}`}
-                  className="flex items-center justify-between rounded-lg px-3 py-2 text-sm text-star-dim hover:bg-space-700 hover:text-star-white transition-colors"
-                >
-                  <span>{section.name}</span>
-                  <span className="text-xs text-star-dim/60">{section.postsCount}</span>
-                </Link>
-              ))
-            ) : (
-              /* 骨架屏 */
-              Array.from({ length: 5 }).map((_, i) => (
-                <div key={i} className="h-8 animate-pulse rounded-lg bg-space-700" />
-              ))
-            )}
-          </nav>
-        </div>
-
         {/* 热门标签 */}
         <div className="rounded-xl border-glow-cyan bg-space-800 p-3">
           <h3 className="mb-2 flex items-center gap-2 text-sm font-medium text-star-white">
@@ -70,6 +54,38 @@ export function Sidebar() {
                 className="rounded-full bg-space-700 px-2.5 py-1 text-xs text-star-dim hover:bg-neon-cyan/10 hover:text-neon-cyan transition-colors"
               >
                 {tag.name}
+              </Link>
+            ))}
+          </div>
+        </div>
+
+        {/* 赞助商广告 */}
+        <div className="rounded-xl border-glow-purple bg-space-800 p-3">
+          <h3 className="mb-2 flex items-center gap-2 text-sm font-medium text-star-white">
+            <Megaphone className="h-4 w-4 text-neon-purple" />
+            赞助商
+          </h3>
+          <div className="space-y-3">
+            {ads.map((ad) => (
+              <Link
+                key={ad.title}
+                href={ad.href}
+                className="group block overflow-hidden rounded-lg border border-space-600 bg-space-700 transition-all hover:border-neon-purple/50 hover:shadow-lg hover:shadow-neon-purple/10"
+              >
+                <div className="aspect-[4/3] overflow-hidden bg-space-900">
+                  <img
+                    src={ad.img}
+                    alt={ad.title}
+                    className="h-full w-full object-cover transition-transform group-hover:scale-105"
+                    loading="lazy"
+                  />
+                </div>
+                <div className="p-2.5">
+                  <p className="text-sm font-medium text-star-white group-hover:text-neon-purple transition-colors line-clamp-1">
+                    {ad.title}
+                  </p>
+                  <p className="mt-0.5 text-xs text-star-dim line-clamp-1">{ad.desc}</p>
+                </div>
               </Link>
             ))}
           </div>

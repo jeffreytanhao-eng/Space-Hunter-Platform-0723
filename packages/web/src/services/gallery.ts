@@ -92,3 +92,9 @@ export async function downloadOriginal(id: string) {
   const { data } = await apiClient.get<{ url: string }>(`/gallery/${id}/download`)
   return data
 }
+
+/** 画廊点赞切换 */
+export async function toggleGalleryLike(id: string) {
+  const { data } = await apiClient.post<{ liked: boolean; likesCount: number }>(`/gallery/${id}/like`)
+  return data
+}
