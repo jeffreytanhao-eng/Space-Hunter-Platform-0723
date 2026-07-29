@@ -1,0 +1,43 @@
+# 太空猎人 - NestJS 后端服务 Dockerfile (Monorepo 适配)
+
+FROM node:18-bullseye-slim AS builder
+
+WORKDIR /app
+
+# 安装构建原生模块所需依赖
+RUN apt-get update && apt-get install -y --no-install-recommends python3 make g++ && rm -rf /var/lib/apt/lists/*
+
+# 复制依赖声明文件
+COPY package.json package-lock.json ./
+COPY packages/server/package.json ./packages/server/package.json
+
+# 安装全部依赖（使用国内 npm 镜像加速）
+RUN npm config set registry https://registry.npmmirror.com && npm ci
+
+# 复制后端源代码
+COPY packages/server ./packages/server
+
+# 编译 TypeScript
+RUN npm run build -w packages/server
+
+# ============ 生产运行阶段 ============
+FROM node:18-bullseye-slim AS production
+
+WORKDIR /app
+
+ENV NODE_ENV=production
+
+# 从构建阶段复制 node_modules 和编译产物
+COPY --from=builder /app/node_modules ./node_modules
+COPY --from=builder /app/packages/server/dist ./packages/server/dist
+COPY --from=builder /app/package.json /app/package-lock.json ./
+COPY --from=builder /app/packages/server/package.json ./packages/server/package.json
+
+EXPOSE 3000
+
+HEALTHCHECK --interval=30s --timeout=10s --start-period=30s --retries=3 \
+    CMD node -e "require('http').get('http://localhost:3000/', (r) => { process.exit(r.statusCode === 200 ? 0 : 1); }).on('error', () => process.exit(1));"
+
+USER node
+
+CMD ["node", "packages/server/dist/main.js"]

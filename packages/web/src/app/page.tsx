@@ -1,4 +1,4 @@
-﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿'use client'
+﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿'use client'
 
 import { useState, useEffect, Suspense } from 'react'
 import { useSearchParams } from 'next/navigation'
@@ -33,6 +33,20 @@ function HomeContent() {
   const { t } = useTranslation()
 
   const { isAuthenticated } = useAuthStore()
+
+  /* 板块名翻译：查 i18n 词典，查不到则 fallback 到原始名称 */
+  const sectionName = (name: string) => {
+    const key = `sections.${name}`
+    const translated = t(key)
+    return translated === key ? name : translated
+  }
+
+  /* 帖子标签翻译：查 i18n 词典，查不到则 fallback 到原始标签名 */
+  const postTagName = (tag: string) => {
+    const key = `postTags.${tag}`
+    const translated = t(key)
+    return translated === key ? tag : translated
+  }
 
   /* 板块列表 */
   const { data: sections } = useQuery({
@@ -120,7 +134,7 @@ function HomeContent() {
                     : 'text-star-dim hover:text-star-white hover:bg-space-700'
                 }`}
               >
-                {section.name}
+                {sectionName(section.name)}
               </Link>
             ))}
           </div>
@@ -147,12 +161,12 @@ function HomeContent() {
                 </div>
               </Card>
             ))
-          ) : postsData?.items.length === 0 ? (
+          ) : postsData?.items?.length === 0 ? (
             <div className="py-20 text-center">
               <p className="text-star-dim">{t('home.noPosts')}</p>
             </div>
           ) : (
-            postsData?.items.map((post) => (
+            postsData?.items?.map((post) => (
               <Link key={post.id} href={`/post/${post.id}`}>
                 <Card glowColor="blue" className="group cursor-pointer transition-all hover:border-neon-blue/50 hover:shadow-lg hover:shadow-neon-blue/5">
                   <div className="flex gap-4">
@@ -176,11 +190,11 @@ function HomeContent() {
                         </span>
                       </div>
                       {/* 标签 */}
-                      {post.tags.length > 0 && (
+                      {post.tags?.length > 0 && (
                         <div className="mt-2 flex flex-wrap gap-1">
                           {post.tags.slice(0, 3).map((tg) => (
                             <Link key={tg} href={`/?tag=${encodeURIComponent(tg)}`}>
-                              <Badge variant="cyan" className="hover:bg-neon-cyan/25 transition-colors cursor-pointer">{tg}</Badge>
+                              <Badge variant="cyan" className="hover:bg-neon-cyan/25 transition-colors cursor-pointer">{postTagName(tg)}</Badge>
                             </Link>
                           ))}
                         </div>

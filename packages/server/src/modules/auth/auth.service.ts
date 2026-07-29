@@ -3,12 +3,24 @@ import { JwtService } from '@nestjs/jwt';
 import { ConfigService } from '@nestjs/config';
 import { UsersService } from '../users/users.service';
 import { RedisService } from '../redis/redis.service';
-// bcrypt 预留：手机号登录暂不需要密码哈希，后续密码功能启用时使用
-// import * as bcrypt from 'bcrypt';
+import * as bcrypt from 'bcrypt';
 
 // 认证服务
 @Injectable()
 export class AuthService {
+  /** 生成唯一昵称：太空猎人-XXXXXXXX（8位随机数），查库确保不重复 */
+  private async generateUniqueNickname(): Promise<string> {
+    for (let attempt = 0; attempt < 10; attempt++) {
+      const num = Math.floor(10000000 + Math.random() * 90000000);
+      const nickname = `太空猎人-${num}`;
+      // 查库确认不重复（nickname 唯一）
+      const existing = await this.usersService.findByNickname(nickname);
+      if (!existing) return nickname;
+    }
+    // 极端情况：10次都碰撞，加时间戳后缀
+    return `太空猎人-${Date.now().toString().slice(-8)}`;
+  }
+
   constructor(
     private readonly usersService: UsersService,
     private readonly jwtService: JwtService,
@@ -30,7 +42,7 @@ export class AuthService {
     // 创建新用户
     const user = await this.usersService.create({
       phone,
-      nickname: `星空旅人${Date.now().toString().slice(-6)}`,
+      nickname: await this.generateUniqueNickname(),
       role: 'user',
       status: 'active',
     });
@@ -75,7 +87,7 @@ export class AuthService {
       // 创建新用户
       user = await this.usersService.create({
         wechatOpenid: openid,
-        nickname: `微信用户${Date.now().toString().slice(-6)}`,
+        nickname: await this.generateUniqueNickname(),
         role: 'user',
         status: 'active',
       });
@@ -83,6 +95,29 @@ export class AuthService {
 
     if (user.status !== 'active') {
       throw new UnauthorizedException('用户已被禁用');
+    }
+
+    return this.generateTokens(user);
+  }
+
+  /** 用户名/密码登录（管理员用）：查找用户 → 校验密码 → 返回 JWT */
+  async loginWithPassword(username: string, password: string) {
+    const user = await this.usersService.findByUsername(username);
+    if (!user) {
+      throw new UnauthorizedException('用户名或密码错误');
+    }
+
+    if (user.status !== 'active') {
+      throw new UnauthorizedException('用户已被禁用');
+    }
+
+    if (!user.password) {
+      throw new UnauthorizedException('该账号未设置密码，请使用手机号登录');
+    }
+
+    const isMatch = await bcrypt.compare(password, user.password);
+    if (!isMatch) {
+      throw new UnauthorizedException('用户名或密码错误');
     }
 
     return this.generateTokens(user);
@@ -115,6 +150,7 @@ export class AuthService {
       user: {
         id: user.id,
         nickname: user.nickname,
+        username: user.username,
         avatar: user.avatar,
         role: user.role,
       },

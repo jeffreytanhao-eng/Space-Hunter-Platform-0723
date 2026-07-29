@@ -30,8 +30,12 @@ export default function PointsManagePage() {
         pageSize,
         type: typeFilter || undefined,
       })
-      setTransactions(res.items)
-      setTotal(res.total)
+      setTransactions(res.items || [])
+      setTotal(res.total || 0)
+    } catch (err) {
+      console.error('加载积分流水失败:', err)
+      setTransactions([])
+      setTotal(0)
     } finally {
       setLoading(false)
     }

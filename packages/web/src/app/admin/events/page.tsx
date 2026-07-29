@@ -19,8 +19,12 @@ export default function EventsReviewPage() {
     setLoading(true)
     try {
       const res: PaginatedResponse<EventItem> = await getPendingEvents({ page, pageSize })
-      setEvents(res.items)
-      setTotal(res.total)
+      setEvents(res.items || [])
+      setTotal(res.total || 0)
+    } catch (err) {
+      console.error('加载活动数据失败:', err)
+      setEvents([])
+      setTotal(0)
     } finally {
       setLoading(false)
     }

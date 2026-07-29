@@ -9,11 +9,16 @@ export class QueryPostDto {
   @IsString()
   sectionId?: string;
 
-  @ApiPropertyOptional({ description: '标签筛选', example: ['深空'] })
+  @ApiPropertyOptional({ description: '标签筛选(数组)' })
   @IsOptional()
   @IsArray()
   @IsString({ each: true })
   tags?: string[];
+
+  @ApiPropertyOptional({ description: '单个标签筛选(便捷参数)' })
+  @IsOptional()
+  @IsString()
+  tag?: string;
 
   @ApiPropertyOptional({ description: '关键词搜索' })
   @IsOptional()

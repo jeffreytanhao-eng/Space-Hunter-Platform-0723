@@ -6,7 +6,7 @@ import { useAuthStore } from '@/stores/auth-store'
 import { Avatar } from '@/components/ui/avatar'
 import { LanguageSwitcher } from '@/components/ui/language-switcher'
 import { useTranslation } from '@/lib/i18n'
-import { Search, ChevronDown, LogOut, User, Coins, Menu, X } from 'lucide-react'
+import { Search, ChevronDown, LogOut, User, Coins, Menu, X, Shield } from 'lucide-react'
 
 /* 顶部导航栏 */
 export function Header() {
@@ -68,6 +68,9 @@ export function Header() {
 
         {/* 用户区域 */}
         <div className="flex items-center gap-3">
+          {/* 语言切换：登录前后都可见 */}
+          <LanguageSwitcher />
+
           {isAuthenticated && user ? (
             <div className="relative" ref={dropdownRef}>
               <button
@@ -97,6 +100,19 @@ export function Header() {
                     <Coins className="h-4 w-4" />
                     {t('nav.pointsCenter')}
                   </Link>
+                  {user.role === 'admin' && (
+                    <>
+                      <div className="my-1 border-t border-space-600" />
+                      <Link
+                        href="/admin"
+                        className="flex items-center gap-2 px-4 py-2 text-sm text-neon-cyan hover:bg-space-700 transition-colors"
+                        onClick={() => setShowDropdown(false)}
+                      >
+                        <Shield className="h-4 w-4" />
+                        {t('nav.admin')}
+                      </Link>
+                    </>
+                  )}
                   <div className="my-1 border-t border-space-600" />
                   <button
                     onClick={() => {
@@ -113,7 +129,6 @@ export function Header() {
             </div>
           ) : (
             <div className="flex items-center gap-2">
-              <LanguageSwitcher />
               <Link
                 href="/login"
                 className="rounded-lg px-3 py-1.5 text-sm text-star-dim hover:text-star-white transition-colors"

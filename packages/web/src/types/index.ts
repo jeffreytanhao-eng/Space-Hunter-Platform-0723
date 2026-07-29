@@ -4,10 +4,12 @@
 export interface User {
   id: string
   phone?: string
+  username?: string
   nickname: string
   avatar?: string
   email?: string
   bio?: string
+  role?: 'user' | 'admin'
   interests?: string[]
   equipment?: string
   points: number
@@ -144,6 +146,7 @@ export interface AuthResponse {
 /** 更新资料参数 */
 export interface UpdateProfileData {
   nickname?: string
+  username?: string
   avatar?: string
   bio?: string
   interests?: string[]

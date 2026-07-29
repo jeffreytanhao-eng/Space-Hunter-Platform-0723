@@ -1,4 +1,4 @@
-﻿'use client'
+﻿﻿﻿﻿﻿﻿﻿﻿﻿'use client'
 
 import { useState } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
@@ -21,7 +21,7 @@ import {
 export default function PointsPage() {
   const { t } = useTranslation()
   const queryClient = useQueryClient()
-  const { isAuthenticated } = useAuthStore()
+  const { isAuthenticated, isLoading } = useAuthStore()
 
   const [txPage, setTxPage] = useState(1)
   const [txType, setTxType] = useState<'earn' | 'spend' | undefined>(undefined)
@@ -70,6 +70,31 @@ export default function PointsPage() {
 
   const txTotalPages = txData ? Math.ceil(txData.total / 10) : 1
   const balance = balanceData?.balance ?? 0
+
+  /* 奖励名称/描述：查 i18n 词典，查不到则 fallback 到后端返回值 */
+  const rewardName = (reward: { id: string; name: string }) => {
+    const key = `rewards.${reward.id}`
+    const translated = t(key)
+    return translated === key ? reward.name : translated
+  }
+  const rewardDesc = (reward: { id: string; description?: string }) => {
+    const key = `rewards.desc_${reward.id}`
+    const translated = t(key)
+    return translated === key ? (reward.description || '') : translated
+  }
+
+  if (isLoading) {
+    return (
+      <div className="flex min-h-screen flex-col">
+        <Header />
+        <main className="mx-auto flex-1 px-4 py-20 text-center">
+          <Loader2 className="mx-auto h-8 w-8 animate-spin text-neon-blue" />
+          <p className="mt-4 text-star-dim">{t('common.loading')}</p>
+        </main>
+        <Footer />
+      </div>
+    )
+  }
 
   if (!isAuthenticated) {
     return (
@@ -149,11 +174,11 @@ export default function PointsPage() {
                   </div>
                 ))}
               </div>
-            ) : txData?.items.length === 0 ? (
+            ) : txData?.items?.length === 0 ? (
               <p className="py-8 text-center text-sm text-star-dim">{t('points.noTransactions')}</p>
             ) : (
               <div className="space-y-3">
-                {txData?.items.map((tx) => (
+                {txData?.items?.map((tx) => (
                   <div key={tx.id} className="flex items-center justify-between border-b border-space-600 pb-3 last:border-0">
                     <div className="flex items-center gap-3">
                       {tx.type === 'earn' ? (
@@ -232,8 +257,8 @@ export default function PointsPage() {
                           <Sparkles className="h-6 w-6 text-neon-purple" />
                         )}
                       </div>
-                      <p className="text-sm font-medium text-star-white">{reward.name}</p>
-                      <p className="mt-1 text-xs text-star-dim">{reward.description}</p>
+                      <p className="text-sm font-medium text-star-white">{rewardName(reward)}</p>
+                      <p className="mt-1 text-xs text-star-dim">{rewardDesc(reward)}</p>
                       <div className="mt-2 flex items-center justify-center gap-1">
                         <Coins className="h-3.5 w-3.5 text-neon-cyan" />
                         <span className="text-sm font-medium text-neon-cyan">{reward.pointsCost}</span>

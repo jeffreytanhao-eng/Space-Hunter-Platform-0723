@@ -1,4 +1,4 @@
-﻿'use client'
+'use client'
 
 import { useState } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
@@ -25,9 +25,9 @@ function StatusBadge({ status }: { status: string }) {
   const { t } = useTranslation()
   const config: Record<string, { variant: 'blue' | 'cyan' | 'purple' | 'default'; label: string }> = {
     pending: { variant: 'default', label: t('events.pending') },
-    approved: { variant: 'blue', label: '已通过' },
-    rejected: { variant: 'default', label: '已拒绝' },
-    ongoing: { variant: 'cyan', label: '进行中' },
+    approved: { variant: 'blue', label: t('events.approved') },
+    rejected: { variant: 'default', label: t('events.rejected') },
+    ongoing: { variant: 'cyan', label: t('events.ongoing') },
     ended: { variant: 'default', label: t('events.ended') },
   }
   const c = config[status] || config.pending

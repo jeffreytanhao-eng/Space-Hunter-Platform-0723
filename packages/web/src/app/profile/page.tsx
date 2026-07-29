@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { getMe, updateProfile, updatePrivacy, uploadAvatar, getUser } from '@/services/users'
+import { getMe, updateProfile, updatePrivacy, uploadAvatar, getUser, updatePassword } from '@/services/users'
 import { getPosts } from '@/services/posts'
 import { followUser, unfollowUser, getFollowStatus, getFollowers, getFollowing } from '@/services/follows'
 import { getGalleryList } from '@/services/gallery'
@@ -18,7 +18,7 @@ import { format } from 'date-fns'
 import {
   User, Camera, Save, Heart, MessageCircle,
   Shield, Eye, EyeOff, Loader2, UserPlus, UserMinus,
-  Users, Image as ImageIcon, Lock
+  Users, Image as ImageIcon, Lock, KeyRound, AtSign
 } from 'lucide-react'
 import Link from 'next/link'
 import { useSearchParams } from 'next/navigation'
@@ -28,13 +28,14 @@ import { Suspense } from 'react'
 function ProfileContent() {
   const queryClient = useQueryClient()
   const searchParams = useSearchParams()
-  const { user: authUser, isAuthenticated, setUser } = useAuthStore()
+  const { user: authUser, isAuthenticated, isLoading: authLoading, setUser } = useAuthStore()
 
   /* 查看他人主页时通过 userId 参数 */
   const viewUserId = searchParams.get('userId') || ''
   const isViewingOther = !!viewUserId && viewUserId !== authUser?.id
 
   const [nickname, setNickname] = useState('')
+  const [username, setUsername] = useState('')
   const [bio, setBio] = useState('')
   const [interests, setInterests] = useState('')
   const [equipment, setEquipment] = useState('')
@@ -43,6 +44,10 @@ function ProfileContent() {
   const [saving, setSaving] = useState(false)
   const [editingProfile, setEditingProfile] = useState(false)
   const [editingPrivacy, setEditingPrivacy] = useState(false)
+  const [editingPassword, setEditingPassword] = useState(false)
+  const [newPassword, setNewPassword] = useState('')
+  const [oldPassword, setOldPassword] = useState('')
+  const [hasPassword, setHasPassword] = useState(false)
   const [message, setMessage] = useState('')
   const [activeTab, setActiveTab] = useState<'posts' | 'gallery' | 'followers' | 'following'>('posts')
 
@@ -117,9 +122,11 @@ function ProfileContent() {
   useEffect(() => {
     if (me) {
       setNickname(me.nickname || '')
+      setUsername(me.username || '')
       setBio(me.bio || '')
       setEquipment(me.equipment || '')
       setInterestList(me.interests || [])
+      setHasPassword(!!((me as unknown) as Record<string, unknown>).password)
       if (me.privacySettings) {
         setShowEmail(me.privacySettings.showEmail)
         setShowPhone(me.privacySettings.showPhone)
@@ -135,6 +142,7 @@ function ProfileContent() {
     try {
       const updated = await updateProfile({
         nickname: nickname || undefined,
+        username: username || undefined,
         bio: bio || undefined,
         interests: interestList.length > 0 ? interestList : undefined,
         equipment: equipment || undefined,
@@ -143,8 +151,32 @@ function ProfileContent() {
       setMessage('资料更新成功')
       setEditingProfile(false)
       queryClient.invalidateQueries({ queryKey: ['me'] })
-    } catch {
-      setMessage('更新失败，请稍后重试')
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : '更新失败，请稍后重试'
+      setMessage(msg)
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  /* 设置/修改密码 */
+  const handleSavePassword = async () => {
+    if (!newPassword || newPassword.length < 6) {
+      setMessage('密码至少 6 位')
+      return
+    }
+    setSaving(true)
+    setMessage('')
+    try {
+      await updatePassword(newPassword, hasPassword ? oldPassword : undefined)
+      setMessage(hasPassword ? '密码修改成功' : '密码设置成功，现在可以用用户名+密码登录')
+      setHasPassword(true)
+      setEditingPassword(false)
+      setNewPassword('')
+      setOldPassword('')
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : '密码设置失败'
+      setMessage(msg)
     } finally {
       setSaving(false)
     }
@@ -172,7 +204,9 @@ function ProfileContent() {
     if (!file) return
     try {
       const result = await uploadAvatar(file)
-      if (me) setUser({ ...me, avatar: result.url })
+      if (result.user) setUser(result.user)
+      else if (me) setUser({ ...me, avatar: result.url })
+      setMessage('头像更新成功')
       queryClient.invalidateQueries({ queryKey: ['me'] })
     } catch {
       setMessage('头像上传失败')
@@ -184,6 +218,19 @@ function ProfileContent() {
     const tag = interestInput.trim()
     if (tag && !interestList.includes(tag)) setInterestList([...interestList, tag])
     setInterestInput('')
+  }
+
+  if (authLoading) {
+    return (
+      <div className="flex min-h-screen flex-col">
+        <Header />
+        <main className="mx-auto flex-1 px-4 py-20 text-center">
+          <Loader2 className="mx-auto h-8 w-8 animate-spin text-neon-blue" />
+          <p className="mt-4 text-star-dim">加载中...</p>
+        </main>
+        <Footer />
+      </div>
+    )
   }
 
   if (!isAuthenticated && !isViewingOther) {
@@ -296,6 +343,16 @@ function ProfileContent() {
                       className="w-full rounded-lg border border-space-600 bg-space-700 px-3 py-2 text-sm text-star-white focus:border-neon-blue/50 focus:outline-none focus:ring-1 focus:ring-neon-blue/30 transition-colors" />
                   </div>
                   <div className="space-y-1.5">
+                    <label className="flex items-center gap-1 text-sm text-star-dim">
+                      <AtSign className="h-3.5 w-3.5" />
+                      用户名（设置后可用用户名+密码登录）
+                    </label>
+                    <input type="text" value={username} onChange={(e) => setUsername(e.target.value)}
+                      placeholder="字母、数字、下划线，2-32位"
+                      className="w-full rounded-lg border border-space-600 bg-space-700 px-3 py-2 text-sm text-star-white placeholder:text-star-dim/60 focus:border-neon-blue/50 focus:outline-none focus:ring-1 focus:ring-neon-blue/30 transition-colors" />
+                    <p className="text-xs text-star-dim/60">用户名唯一，不填写则不设置。设置后可在登录页用「密码登录」</p>
+                  </div>
+                  <div className="space-y-1.5">
                     <label className="block text-sm text-star-dim">简介</label>
                     <textarea value={bio} onChange={(e) => setBio(e.target.value)} rows={3} placeholder="介绍一下自己..."
                       className="w-full rounded-lg border border-space-600 bg-space-700 px-3 py-2 text-sm text-star-white placeholder:text-star-dim/60 focus:border-neon-blue/50 focus:outline-none focus:ring-1 focus:ring-neon-blue/30 resize-none transition-colors" />
@@ -372,11 +429,11 @@ function ProfileContent() {
             {/* 帖子列表 */}
             {activeTab === 'posts' && (
               <Card glowColor="cyan" className="mb-6">
-                {userPosts?.items.length === 0 ? (
+                {userPosts?.items?.length === 0 ? (
                   <p className="py-4 text-center text-sm text-star-dim">暂无帖子</p>
                 ) : (
                   <div className="space-y-3">
-                    {userPosts?.items.map((post) => (
+                    {userPosts?.items?.map((post) => (
                       <Link key={post.id} href={`/post/${post.id}`}>
                         <div className="rounded-lg border border-space-600 bg-space-700 p-3 hover:border-neon-cyan/30 transition-colors">
                           <h4 className="text-sm font-medium text-star-white">{post.title}</h4>
@@ -396,10 +453,10 @@ function ProfileContent() {
             {/* 画廊作品 */}
             {activeTab === 'gallery' && (
               <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-                {userGallery?.items.length === 0 ? (
+                {userGallery?.items?.length === 0 ? (
                   <p className="col-span-full py-4 text-center text-sm text-star-dim">暂无画廊作品</p>
                 ) : (
-                  userGallery?.items.map((item) => (
+                  userGallery?.items?.map((item) => (
                     <Link key={item.id} href="/gallery">
                       <div className="overflow-hidden rounded-xl border border-space-600 bg-space-800 transition-all hover:border-neon-cyan/40">
                         <img src={item.imageUrl} alt={item.title} className="h-40 w-full object-cover" />
@@ -419,11 +476,11 @@ function ProfileContent() {
             {/* 粉丝列表 */}
             {activeTab === 'followers' && (
               <Card glowColor="blue" className="mb-6">
-                {followersData?.items.length === 0 ? (
+                {followersData?.items?.length === 0 ? (
                   <p className="py-4 text-center text-sm text-star-dim">暂无粉丝</p>
                 ) : (
                   <div className="space-y-3">
-                    {followersData?.items.map((f) => (
+                    {followersData?.items?.map((f) => (
                       <Link key={f.id} href={`/profile?userId=${f.id}`}>
                         <div className="flex items-center gap-3 rounded-lg p-2 hover:bg-space-700 transition-colors">
                           <Avatar src={f.avatar} alt={f.nickname} size="sm" />
@@ -442,11 +499,11 @@ function ProfileContent() {
             {/* 关注列表 */}
             {activeTab === 'following' && (
               <Card glowColor="blue" className="mb-6">
-                {followingData?.items.length === 0 ? (
+                {followingData?.items?.length === 0 ? (
                   <p className="py-4 text-center text-sm text-star-dim">暂无关注</p>
                 ) : (
                   <div className="space-y-3">
-                    {followingData?.items.map((f) => (
+                    {followingData?.items?.map((f) => (
                       <Link key={f.id} href={`/profile?userId=${f.id}`}>
                         <div className="flex items-center gap-3 rounded-lg p-2 hover:bg-space-700 transition-colors">
                           <Avatar src={f.avatar} alt={f.nickname} size="sm" />
@@ -510,6 +567,65 @@ function ProfileContent() {
                     <p>公开邮箱：{showEmail ? '是' : '否'}</p>
                     <p>公开手机号：{showPhone ? '是' : '否'}</p>
                     <p>公开设备信息：{showEquipment ? '是' : '否'}</p>
+                  </div>
+                )}
+              </Card>
+            )}
+
+            {/* 密码设置（仅自己可见） */}
+            {!isViewingOther && (
+              <Card glowColor="cyan" className="mb-6">
+                <div className="flex items-center justify-between">
+                  <h3 className="flex items-center gap-2 text-base font-medium text-star-white">
+                    <KeyRound className="h-4 w-4 text-neon-cyan" />
+                    {hasPassword ? '修改密码' : '设置密码'}
+                  </h3>
+                  <Button variant="ghost" size="sm" onClick={() => setEditingPassword(!editingPassword)}>
+                    {editingPassword ? '取消' : hasPassword ? '修改' : '设置'}
+                  </Button>
+                </div>
+
+                {editingPassword ? (
+                  <div className="mt-4 space-y-3">
+                    {hasPassword && (
+                      <div className="space-y-1.5">
+                        <label className="block text-sm text-star-dim">旧密码</label>
+                        <input
+                          type="password"
+                          value={oldPassword}
+                          onChange={(e) => setOldPassword(e.target.value)}
+                          placeholder="请输入旧密码"
+                          className="w-full rounded-lg border border-space-600 bg-space-700 px-3 py-2 text-sm text-star-white placeholder:text-star-dim/60 focus:border-neon-blue/50 focus:outline-none focus:ring-1 focus:ring-neon-blue/30 transition-colors"
+                        />
+                      </div>
+                    )}
+                    <div className="space-y-1.5">
+                      <label className="block text-sm text-star-dim">
+                        {hasPassword ? '新密码' : '设置密码'}
+                      </label>
+                      <input
+                        type="password"
+                        value={newPassword}
+                        onChange={(e) => setNewPassword(e.target.value)}
+                        placeholder="至少 6 位"
+                        className="w-full rounded-lg border border-space-600 bg-space-700 px-3 py-2 text-sm text-star-white placeholder:text-star-dim/60 focus:border-neon-blue/50 focus:outline-none focus:ring-1 focus:ring-neon-blue/30 transition-colors"
+                      />
+                      <p className="text-xs text-star-dim/60">
+                        设置密码后，可在登录页使用「密码登录」模式（需同时设置用户名）
+                      </p>
+                    </div>
+                    <div className="flex justify-end">
+                      <Button onClick={handleSavePassword} disabled={saving || !newPassword}>
+                        {saving ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />}
+                        保存密码
+                      </Button>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="mt-3 text-sm text-star-dim">
+                    {hasPassword
+                      ? '已设置密码，可在登录页使用用户名+密码登录'
+                      : '未设置密码，设置后可用用户名+密码登录（需先在编辑资料中设置用户名）'}
                   </div>
                 )}
               </Card>

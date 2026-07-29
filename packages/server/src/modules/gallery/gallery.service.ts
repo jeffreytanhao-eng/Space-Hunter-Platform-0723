@@ -67,7 +67,7 @@ export class GalleryService {
     if (sortBy === 'likes') {
       qb.orderBy('g.like_count', 'DESC');
     } else {
-      qb.orderBy('g.created_at', 'DESC');
+      qb.orderBy('g.createdAt', 'DESC');
     }
 
     // 分页
@@ -295,7 +295,7 @@ export class GalleryService {
     const qb = this.galleryRepo
       .createQueryBuilder('g')
       .where('g.status = :status', { status: 'pending' })
-      .orderBy('g.created_at', 'ASC');
+      .orderBy('g.createdAt', 'ASC');
 
     const skip = (page - 1) * pageSize;
     qb.skip(skip).take(pageSize);

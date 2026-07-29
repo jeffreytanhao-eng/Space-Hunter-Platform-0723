@@ -1,4 +1,4 @@
-﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿'use client'
+﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿'use client'
 
 import { useState } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
@@ -88,7 +88,7 @@ export default function GalleryPage() {
         if (!old) return old
         return {
           ...old,
-          items: old.items.map((it: any) =>
+          items: (old.items || []).map((it: any) =>
             it.id === id
               ? { ...it, isLiked: !it.isLiked, likesCount: it.isLiked ? it.likesCount - 1 : it.likesCount + 1 }
               : it
@@ -472,7 +472,7 @@ export default function GalleryPage() {
                     className="w-full rounded-lg border border-space-600 bg-space-700 px-3 py-2 text-sm text-star-white focus:border-neon-cyan/50 focus:outline-none focus:ring-1 focus:ring-neon-cyan/30 transition-colors"
                   >
                     <option value="">{t('gallery.applySelectPhotoPlaceholder')}</option>
-                    {myPostsData?.items.filter(p => p.images && p.images.length > 0).map((post) => (
+                    {myPostsData?.items?.filter(p => p.images && p.images.length > 0).map((post) => (
                       <option key={post.id} value={post.id}>{post.title}</option>
                     ))}
                   </select>

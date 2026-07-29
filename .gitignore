@@ -45,3 +45,20 @@ venv/
 # Graphify
 graphify-out/
 .graphify_*
+
+# 临时部署/调试脚本
+tmp_*.py
+tmp_*.sh
+
+# 构建产物
+*.tsbuildinfo
+
+# 上传目录
+uploads/
+
+# Docker daemon 配置
+daemon.json
+
+# Nginx 证书备份
+*_nginx.zip
+*_nginx/

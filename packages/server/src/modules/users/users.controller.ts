@@ -23,6 +23,7 @@ import { CurrentUser } from '../../common/decorators/current-user.decorator';
 import { UsersService } from './users.service';
 import { UpdateProfileDto } from './dto/update-profile.dto';
 import { UpdatePrivacyDto } from './dto/update-privacy.dto';
+import { UpdatePasswordDto } from './dto/update-password.dto';
 
 @ApiTags('用户')
 @Controller('users')
@@ -59,12 +60,16 @@ export class UsersController {
   @Put('me/password')
   @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()
-  @ApiOperation({ summary: '修改密码（预留）' })
-  @ApiResponse({ status: 200, description: '密码修改成功' })
+  @ApiOperation({ summary: '设置/修改密码' })
+  @ApiResponse({ status: 200, description: '密码设置成功' })
+  @ApiResponse({ status: 400, description: '旧密码错误或密码格式不符' })
   @ApiResponse({ status: 401, description: '未认证' })
-  async updatePassword(@CurrentUser() user: any) {
-    // 预留：手机号登录暂不需要密码修改
-    return { message: '功能暂未开放' };
+  async updatePassword(
+    @CurrentUser() user: any,
+    @Body() dto: UpdatePasswordDto,
+  ) {
+    await this.usersService.updatePassword(user.id, dto.newPassword, dto.oldPassword);
+    return { message: '密码设置成功' };
   }
 
   @Put('me/privacy')

@@ -29,9 +29,6 @@ interface MockPost {
 }
 
 const mockPosts: MockPost[] = [
-  { section: '观测分享', title: 'M42猎户座大星云最新拍摄 - 32小时累计曝光', content: '经过三个晴朗的夜晚，终于完成了M42猎户座大星云的深度拍摄。总曝光时间32小时，使用了H-alpha/OIII/SII窄带滤镜，后期采用HOO合成。星云的纤维状结构清晰可见，猎户座四边形星团也分辨得很好。\n\n设备：\n- 主镜：高桥TOA-130\n- 赤道仪：信达EQ6R Pro\n- 相机：ZWO ASI2600MM Pro\n- 滤镜：Antlia 3nm窄带套', images: [
-    { url: 'https://esahubble.org/media/archives/images/large/opo9410a.jpg', type: 'image' },
-  ], tags: ['M42', '猎户座星云', '窄带摄影', '深空摄影'] },
   { section: '观测分享', title: '七夕之夜的银河拱桥 - 青海冷湖纪录', content: '今年七夕去了一趟青海冷湖，那里的暗夜条件真的太棒了！光污染等级几乎为1级，银河肉眼可见。这张银河拱桥是用20张照片拼接而成，前景是当地的雅丹地貌。\n\n拍摄参数：\n- 机身：索尼A7R5\n- 镜头：适马14mm f/1.8 DG DN\n- 参数：f/1.8, ISO 3200, 15s x 20张拼接', images: [
     { url: 'https://noirlab.edu/public/media/archives/images/screen/noirlab2430b.jpg', type: 'image' },
   ], tags: ['银河', '星野摄影', '冷湖', '拼接'] },
@@ -88,21 +85,25 @@ async function run() {
     const passwordHash = await bcrypt.hash('123456', 10);
 
     console.log('--- 1. 检查/创建管理员 ---');
-    const adminResult = await queryRunner.query(`SELECT id FROM users WHERE phone = 'admin'`);
+    // 兼容旧数据：phone='admin' 或 username='admin'
+    const adminResult = await queryRunner.query(
+      `SELECT id FROM users WHERE username = 'admin' OR phone = 'admin'`
+    );
     let adminId: string;
     if (adminResult.length === 0) {
       const res = await queryRunner.query(
-        `INSERT INTO users (phone, nickname, role, status, points_balance, bio, privacy_profile, privacy_dynamic)
-         VALUES ('admin', '超级管理员', 'admin', 'active', 9999, '系统超级管理员', 'public', 'public')
-         RETURNING id`
+        `INSERT INTO users (phone, username, password, nickname, role, status, points_balance, bio, privacy_profile, privacy_dynamic)
+         VALUES (NULL, 'admin', $1, '超级管理员', 'admin', 'active', 9999, '系统超级管理员', 'public', 'public')
+         RETURNING id`,
+        [passwordHash]
       );
       adminId = res[0].id;
       console.log(`  创建管理员成功，ID: ${adminId}`);
     } else {
       adminId = adminResult[0].id;
       await queryRunner.query(
-        `UPDATE users SET nickname = '超级管理员', role = 'admin', status = 'active', points_balance = 9999 WHERE id = $1`,
-        [adminId]
+        `UPDATE users SET username = 'admin', password = $1, nickname = '超级管理员', role = 'admin', status = 'active', points_balance = 9999 WHERE id = $2`,
+        [passwordHash, adminId]
       );
       console.log(`  管理员已更新，ID: ${adminId}`);
     }

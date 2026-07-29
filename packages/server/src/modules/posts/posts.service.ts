@@ -45,6 +45,7 @@ export class PostsService {
     const {
       sectionId,
       tags,
+      tag,
       keyword,
       page = 1,
       pageSize = 20,
@@ -65,9 +66,10 @@ export class PostsService {
       parameters.sectionId = sectionId;
     }
 
-    if (tags && tags.length > 0) {
+    const effectiveTags = tags || (tag ? [tag] : undefined);
+    if (effectiveTags && effectiveTags.length > 0) {
       whereConditions.push('post.tags @> :tags');
-      parameters.tags = JSON.stringify(tags);
+      parameters.tags = JSON.stringify(effectiveTags);
     }
 
     if (keyword) {

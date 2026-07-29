@@ -11,6 +11,7 @@ interface AuthState {
   isLoading: boolean
   /* Actions */
   login: (phone: string, code: string) => Promise<void>
+  loginWithPassword: (username: string, password: string) => Promise<void>
   register: (phone: string, code: string) => Promise<void>
   logout: () => void
   setUser: (user: User) => void
@@ -25,6 +26,21 @@ export const useAuthStore = create<AuthState>((set) => ({
 
   login: async (phone, code) => {
     const res = await authService.login(phone, code)
+    setToken(res.token)
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('refresh_token', res.refreshToken)
+      localStorage.setItem('user_data', JSON.stringify(res.user))
+    }
+    set({
+      user: res.user,
+      token: res.token,
+      isAuthenticated: true,
+      isLoading: false,
+    })
+  },
+
+  loginWithPassword: async (username, password) => {
+    const res = await authService.loginWithPassword(username, password)
     setToken(res.token)
     if (typeof window !== 'undefined') {
       localStorage.setItem('refresh_token', res.refreshToken)
@@ -81,6 +97,14 @@ export const useAuthStore = create<AuthState>((set) => ({
     }
     const token = localStorage.getItem('auth_token')
     const userData = localStorage.getItem('user_data')
+    /* 清除旧的无效 token（之前 token 字段名不匹配导致存了 "undefined" 字符串） */
+    if (!token || token === 'undefined' || token === 'null') {
+      removeToken()
+      localStorage.removeItem('user_data')
+      localStorage.removeItem('refresh_token')
+      set({ isLoading: false })
+      return
+    }
     if (token && userData) {
       try {
         const user = JSON.parse(userData) as User

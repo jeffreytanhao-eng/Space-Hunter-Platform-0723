@@ -33,8 +33,12 @@ export default function UsersManagePage() {
     setLoading(true)
     try {
       const res: PaginatedResponse<AdminUser> = await getUsers({ page, pageSize, keyword: keyword || undefined })
-      setUsers(res.items)
-      setTotal(res.total)
+      setUsers(res.items || [])
+      setTotal(res.total || 0)
+    } catch (err) {
+      console.error('加载用户数据失败:', err)
+      setUsers([])
+      setTotal(0)
     } finally {
       setLoading(false)
     }

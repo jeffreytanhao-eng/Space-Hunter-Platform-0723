@@ -3,6 +3,7 @@ import { ApiTags, ApiOperation, ApiResponse } from '@nestjs/swagger';
 import { AuthService } from './auth.service';
 import { RegisterDto } from './dto/register.dto';
 import { LoginDto } from './dto/login.dto';
+import { LoginPasswordDto } from './dto/login-password.dto';
 import { WechatLoginDto } from './dto/wechat-login.dto';
 import { RefreshTokenDto } from './dto/refresh-token.dto';
 import { SendSmsCodeDto } from './dto/send-sms-code.dto';
@@ -27,6 +28,14 @@ export class AuthController {
   @ApiResponse({ status: 401, description: '用户已被禁用' })
   async login(@Body() dto: LoginDto) {
     return this.authService.login(dto.phone, dto.code);
+  }
+
+  @Post('login-password')
+  @ApiOperation({ summary: '用户名+密码登录（管理员）' })
+  @ApiResponse({ status: 200, description: '登录成功，返回 JWT' })
+  @ApiResponse({ status: 401, description: '用户名或密码错误' })
+  async loginWithPassword(@Body() dto: LoginPasswordDto) {
+    return this.authService.loginWithPassword(dto.username, dto.password);
   }
 
   @Post('wechat')

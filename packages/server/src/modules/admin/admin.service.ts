@@ -110,7 +110,7 @@ export class AdminService {
       });
     }
 
-    qb.orderBy('p.created_at', 'ASC');
+    qb.orderBy('p.createdAt', 'ASC');
 
     const skip = (page - 1) * pageSize;
     qb.skip(skip).take(pageSize);
@@ -167,7 +167,7 @@ export class AdminService {
     const qb = this.sectionRepo
       .createQueryBuilder('s')
       .where('s.status = :status', { status: 'pending' })
-      .orderBy('s.created_at', 'ASC');
+      .orderBy('s.createdAt', 'ASC');
 
     const skip = (page - 1) * pageSize;
     qb.skip(skip).take(pageSize);
@@ -215,7 +215,7 @@ export class AdminService {
       });
     }
 
-    qb.orderBy('u.created_at', 'DESC');
+    qb.orderBy('u.createdAt', 'DESC');
 
     const skip = (page - 1) * pageSize;
     qb.skip(skip).take(pageSize);
@@ -284,7 +284,7 @@ export class AdminService {
     const qb = this.pointsTxRepo
       .createQueryBuilder('tx')
       .leftJoinAndSelect('tx.user', 'user')
-      .orderBy('tx.created_at', 'DESC');
+      .orderBy('tx.createdAt', 'DESC');
 
     // keyword 筛选用户昵称或描述
     if (keyword) {
@@ -352,7 +352,7 @@ export class AdminService {
     const qb = this.adminLogRepo
       .createQueryBuilder('log')
       .leftJoinAndSelect('log.admin', 'admin')
-      .orderBy('log.created_at', 'DESC');
+      .orderBy('log.createdAt', 'DESC');
 
     if (keyword) {
       qb.andWhere('(log.action ILIKE :keyword OR admin.nickname ILIKE :keyword)', {

@@ -20,8 +20,12 @@ export default function PostsReviewPage() {
     setLoading(true)
     try {
       const res: PaginatedResponse<Post> = await getPendingPosts({ page, pageSize })
-      setPosts(res.items)
-      setTotal(res.total)
+      setPosts(res.items || [])
+      setTotal(res.total || 0)
+    } catch (err) {
+      console.error('加载帖子数据失败:', err)
+      setPosts([])
+      setTotal(0)
     } finally {
       setLoading(false)
     }

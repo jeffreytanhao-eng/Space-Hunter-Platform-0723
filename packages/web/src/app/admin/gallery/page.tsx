@@ -20,8 +20,12 @@ export default function GalleryReviewPage() {
     setLoading(true)
     try {
       const res: PaginatedResponse<GalleryItem> = await getPendingGallery({ page, pageSize })
-      setItems(res.items)
-      setTotal(res.total)
+      setItems(res.items || [])
+      setTotal(res.total || 0)
+    } catch (err) {
+      console.error('加载画廊数据失败:', err)
+      setItems([])
+      setTotal(0)
     } finally {
       setLoading(false)
     }

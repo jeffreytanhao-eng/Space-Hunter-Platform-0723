@@ -1,4 +1,4 @@
-﻿﻿﻿﻿﻿﻿﻿import {
+﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿import {
   Entity,
   PrimaryGeneratedColumn,
   Column,
@@ -27,6 +27,14 @@ export class User {
   /** 手机号 */
   @Column({ type: 'varchar', length: 20, unique: true, nullable: true })
   phone: string | null;
+
+  /** 用户名（管理员密码登录用） */
+  @Column({ type: 'varchar', length: 64, unique: true, nullable: true })
+  username: string | null;
+
+  /** 密码哈希（bcrypt，管理员密码登录用） */
+  @Column({ type: 'varchar', length: 128, nullable: true })
+  password: string | null;
 
   /** 微信 openid */
   @Column({ type: 'varchar', length: 64, unique: true, nullable: true, name: 'wechat_openid' })

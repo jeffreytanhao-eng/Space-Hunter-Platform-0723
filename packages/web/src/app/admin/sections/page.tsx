@@ -25,8 +25,12 @@ export default function SectionsManagePage() {
     setLoading(true)
     try {
       const res: PaginatedResponse<SectionAdmin> = await getPendingSections({ page, pageSize })
-      setSections(res.items)
-      setTotal(res.total)
+      setSections(res.items || [])
+      setTotal(res.total || 0)
+    } catch (err) {
+      console.error('加载板块数据失败:', err)
+      setSections([])
+      setTotal(0)
     } finally {
       setLoading(false)
     }
