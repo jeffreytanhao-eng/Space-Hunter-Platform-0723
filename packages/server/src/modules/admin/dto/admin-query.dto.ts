@@ -22,4 +22,9 @@ export class AdminQueryDto {
   @IsOptional()
   @IsString()
   keyword?: string;
+
+  @ApiPropertyOptional({ description: '状态筛选' })
+  @IsOptional()
+  @IsString()
+  status?: string;
 }

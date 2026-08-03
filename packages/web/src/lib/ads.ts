@@ -38,7 +38,7 @@ export function getAmapUrl(ad: AdItem): string {
   if (!hasMap(ad)) return ''
 
   // 有经纬度：精确定位
-  if (ad.lng != null && ad.lat != null) {
+  if (ad.lng != null && ad.lat != null) { // eslint-disable-line eqeqeq
     const params = new URLSearchParams({
       position: `${ad.lng},${ad.lat}`,
       name: ad.title,
@@ -59,5 +59,5 @@ export function getAmapUrl(ad: AdItem): string {
 
 /* 判断广告是否有精确坐标（用于决定是否显示导航按钮） */
 export function hasCoordinates(ad: AdItem): boolean {
-  return ad.lng != null && ad.lat != null
+  return ad.lng != null && ad.lat != null // eslint-disable-line eqeqeq
 }

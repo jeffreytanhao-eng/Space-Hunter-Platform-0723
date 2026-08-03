@@ -55,9 +55,9 @@ export class AuthController {
   }
 
   @Post('sms-code')
-  @ApiOperation({ summary: '发送短信验证码（开发环境固定 123456）' })
+  @ApiOperation({ summary: '发送短信验证码（生产环境由供应商发送，开发环境固定 123456）' })
   @ApiResponse({ status: 200, description: '验证码发送成功' })
-  @ApiResponse({ status: 429, description: '发送过于频繁' })
+  @ApiResponse({ status: 400, description: '发送过于频繁或短信服务异常' })
   async sendSmsCode(@Body() dto: SendSmsCodeDto) {
     return this.authService.sendSmsCode(dto.phone);
   }

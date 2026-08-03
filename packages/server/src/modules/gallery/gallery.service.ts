@@ -13,6 +13,7 @@ import { User } from '../../database/entities/user.entity';
 import { PointsService } from '../points/points.service';
 import { CosService } from '../upload/cos.service';
 import { RedisService } from '../redis/redis.service';
+import { ModerationService } from '../../common/moderation/moderation.service';
 import { ApplyGalleryDto } from './dto/apply-gallery.dto';
 import { ReviewGalleryDto } from './dto/review-gallery.dto';
 import { QueryGalleryDto } from './dto/query-gallery.dto';
@@ -40,6 +41,7 @@ export class GalleryService {
     private readonly pointsService: PointsService,
     private readonly cosService: CosService,
     private readonly redisService: RedisService,
+    private readonly moderationService: ModerationService,
   ) {}
 
   /** 画廊列表（仅 approved） */
@@ -171,6 +173,16 @@ export class GalleryService {
       throw new BadRequestException('无法获取图片 URL');
     }
 
+    // AI 初筛：本地敏感词过滤（标题 + 描述）
+    const moderationText = [dto.title, dto.description].filter(Boolean).join(' ');
+    const moderationResult = this.moderationService.moderateText(moderationText);
+    const moderation = {
+      result: moderationResult.result,
+      matchedCategories: moderationResult.matchedCategories,
+      matchedKeywords: [...moderationResult.blockedKeywords, ...moderationResult.suspectKeywords],
+      checkedAt: new Date().toISOString(),
+    };
+
     const photo = this.galleryRepo.create({
       userId,
       postId: dto.postId || null,
@@ -181,6 +193,7 @@ export class GalleryService {
       metadata,
       category: dto.category || null,
       status: 'pending', // ADR-004: 画廊申请必须人工终审
+      moderation,
     });
 
     return this.galleryRepo.save(photo);
@@ -331,5 +344,84 @@ export class GalleryService {
       // 如果不是合法 URL，直接当作 key
       return url;
     }
+  }
+
+  /** 获取全部画廊列表（供 Admin 模块调用，含已审核/已隐藏） */
+  async getAllForAdmin(query: { page?: number; pageSize?: number; status?: string; keyword?: string }): Promise<PaginatedResult<GalleryPhoto>> {
+    const page = query.page || 1;
+    const pageSize = query.pageSize || 20;
+
+    const qb = this.galleryRepo.createQueryBuilder('g');
+
+    if (query.status) {
+      qb.andWhere('g.status = :status', { status: query.status });
+    }
+    if (query.keyword) {
+      qb.andWhere('(g.title ILIKE :keyword OR g.description ILIKE :keyword)', { keyword: `%${query.keyword}%` });
+    }
+    qb.orderBy('g.createdAt', 'DESC');
+
+    const skip = (page - 1) * pageSize;
+    qb.skip(skip).take(pageSize);
+
+    const [data, total] = await qb.getManyAndCount();
+
+    // 手动查询用户信息
+    const userIds = [...new Set(data.map(p => p.userId))];
+    if (userIds.length > 0) {
+      const users = await this.galleryRepo.manager.getRepository(User).findByIds(userIds);
+      const userMap = new Map(users.map((u: any) => [u.id, u] as [any, any]));
+      (data as any[]).forEach(photo => {
+        photo.user = userMap.get(photo.userId) || null;
+      });
+    }
+
+    return {
+      data,
+      total,
+      page,
+      pageSize,
+      totalPages: Math.ceil(total / pageSize),
+    };
+  }
+
+  /** 隐藏画廊作品（管理员） */
+  async hide(adminId: string, id: string): Promise<GalleryPhoto> {
+    const photo = await this.galleryRepo.findOne({ where: { id } });
+    if (!photo) {
+      throw new NotFoundException('画廊照片不存在');
+    }
+    photo.status = 'hidden';
+    const saved = await this.galleryRepo.save(photo);
+    await this.adminLogRepo.save(
+      this.adminLogRepo.create({ adminId, action: 'gallery_hidden', targetType: 'gallery', targetId: id }),
+    );
+    return saved;
+  }
+
+  /** 恢复画廊作品（管理员，从 hidden 恢复为 approved） */
+  async show(adminId: string, id: string): Promise<GalleryPhoto> {
+    const photo = await this.galleryRepo.findOne({ where: { id } });
+    if (!photo) {
+      throw new NotFoundException('画廊照片不存在');
+    }
+    photo.status = 'approved';
+    const saved = await this.galleryRepo.save(photo);
+    await this.adminLogRepo.save(
+      this.adminLogRepo.create({ adminId, action: 'gallery_restored', targetType: 'gallery', targetId: id }),
+    );
+    return saved;
+  }
+
+  /** 删除画廊作品（管理员） */
+  async remove(adminId: string, id: string): Promise<void> {
+    const photo = await this.galleryRepo.findOne({ where: { id } });
+    if (!photo) {
+      throw new NotFoundException('画廊照片不存在');
+    }
+    await this.galleryRepo.remove(photo);
+    await this.adminLogRepo.save(
+      this.adminLogRepo.create({ adminId, action: 'gallery_deleted', targetType: 'gallery', targetId: id }),
+    );
   }
 }

@@ -1,13 +1,16 @@
-import { Injectable, UnauthorizedException, BadRequestException } from '@nestjs/common';
+import { Injectable, UnauthorizedException, BadRequestException, Logger } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { ConfigService } from '@nestjs/config';
 import { UsersService } from '../users/users.service';
 import { RedisService } from '../redis/redis.service';
+import { SmsService } from './sms.service';
 import * as bcrypt from 'bcrypt';
 
 // 认证服务
 @Injectable()
 export class AuthService {
+  private readonly logger = new Logger(AuthService.name);
+
   /** 生成唯一昵称：太空猎人-XXXXXXXX（8位随机数），查库确保不重复 */
   private async generateUniqueNickname(): Promise<string> {
     for (let attempt = 0; attempt < 10; attempt++) {
@@ -26,6 +29,7 @@ export class AuthService {
     private readonly jwtService: JwtService,
     private readonly configService: ConfigService,
     private readonly redisService: RedisService,
+    private readonly smsService: SmsService,
   ) {}
 
   /** 注册：校验验证码 → 查找用户 → 不存在则创建 → 返回 JWT */
@@ -157,32 +161,52 @@ export class AuthService {
     };
   }
 
-  /** 验证短信验证码（Redis 存储，5分钟过期） */
+  /** 验证短信验证码 */
   async verifySmsCode(phone: string, code: string) {
-    const storedCode = await this.redisService.get(`sms:code:${phone}`);
-    if (!storedCode) {
-      throw new BadRequestException('验证码已过期，请重新获取');
-    }
-    if (storedCode !== code) {
-      throw new BadRequestException('验证码错误');
+    const env = this.configService.get<string>('APP_ENV', 'development');
+
+    if (env === 'production') {
+      // 生产环境：由短信供应商校验验证码
+      const valid = await this.smsService.validateCode(phone, code);
+      if (!valid) {
+        throw new BadRequestException('验证码错误');
+      }
+    } else {
+      // 开发环境：从 Redis 校验（固定 123456）
+      const storedCode = await this.redisService.get(`sms:code:${phone}`);
+      if (!storedCode) {
+        throw new BadRequestException('验证码已过期，请重新获取');
+      }
+      if (storedCode !== code) {
+        throw new BadRequestException('验证码错误');
+      }
     }
     return true;
   }
 
-  /** 发送短信验证码（开发环境直接存 Redis，固定 123456） */
+  /** 发送短信验证码 */
   async sendSmsCode(phone: string) {
     const env = this.configService.get<string>('APP_ENV', 'development');
-    const code = env === 'production' ? this.generateRandomCode() : '123456';
 
-    // 存入 Redis，5 分钟过期
-    await this.redisService.set(`sms:code:${phone}`, code, 300);
+    // 频率限制：60 秒内不可重复发送
+    const rateLimitKey = `sms:rate:${phone}`;
+    const rateLimited = await this.redisService.get(rateLimitKey);
+    if (rateLimited) {
+      throw new BadRequestException('发送过于频繁，请60秒后再试');
+    }
 
     if (env === 'production') {
-      // TODO: 接入短信服务商发送验证码
-      console.log(`[生产环境] 向 ${phone} 发送验证码: ${code}`);
+      // 生产环境：调用短信供应商 API 发送验证码
+      await this.smsService.sendCode(phone);
     } else {
-      console.log(`[开发环境] 验证码: ${code} (手机号: ${phone})`);
+      // 开发环境：固定验证码 123456，存入 Redis
+      const code = '123456';
+      await this.redisService.set(`sms:code:${phone}`, code, 300);
+      this.logger.log(`[开发环境] 验证码: ${code} (手机号: ${phone})`);
     }
+
+    // 设置 60 秒频率限制
+    await this.redisService.set(rateLimitKey, '1', 60);
 
     return { message: '验证码发送成功' };
   }
@@ -199,10 +223,5 @@ export class AuthService {
     } catch {
       throw new UnauthorizedException('刷新令牌无效或已过期');
     }
-  }
-
-  /** 生成6位随机验证码 */
-  private generateRandomCode(): string {
-    return Math.floor(100000 + Math.random() * 900000).toString();
   }
 }

@@ -304,8 +304,8 @@ function AdFormModal({
     // 地址信息（可选，仅需填写地址文字；若有坐标则一并保存）
     if (address.trim()) {
       data.address = address.trim()
-      if (lng != null) data.lng = lng
-      if (lat != null) data.lat = lat
+      if (lng !== null && lng !== undefined) data.lng = lng
+      if (lat !== null && lat !== undefined) data.lat = lat
     }
 
     onSave(data)
@@ -451,7 +451,7 @@ function AdFormModal({
                   地图选点
                 </button>
               </div>
-              {lng != null && lat != null && (
+              {lng !== null && lng !== undefined && lat !== null && lat !== undefined && (
                 <p className="mt-1.5 flex items-center gap-1 text-xs text-neon-cyan/70">
                   <MapPin className="h-3 w-3" />
                   已定位：{lng.toFixed(4)}°E, {lat.toFixed(4)}°N

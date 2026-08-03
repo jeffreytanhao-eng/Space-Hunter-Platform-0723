@@ -3,6 +3,7 @@ import {
   Get,
   Put,
   Post,
+  Delete,
   Param,
   Body,
   Query,
@@ -75,6 +76,53 @@ export class AdminController {
     return this.adminService.reviewPost(adminId, postId, dto);
   }
 
+  @Get('posts')
+  @ApiOperation({ summary: '全部帖子列表（含已发布/已隐藏）' })
+  async getAllPosts(
+    @CurrentUser('role') role: string,
+    @Query() query: AdminQueryDto,
+  ) {
+    this.checkAdmin(role);
+    return this.adminService.getAllPosts(query);
+  }
+
+  @Put('posts/:id/hide')
+  @ApiOperation({ summary: '隐藏帖子' })
+  @ApiParam({ name: 'id', description: '帖子 ID' })
+  async hidePost(
+    @CurrentUser('id') adminId: string,
+    @CurrentUser('role') role: string,
+    @Param('id') postId: string,
+  ) {
+    this.checkAdmin(role);
+    return this.adminService.hidePost(adminId, postId);
+  }
+
+  @Put('posts/:id/show')
+  @ApiOperation({ summary: '恢复帖子（取消隐藏）' })
+  @ApiParam({ name: 'id', description: '帖子 ID' })
+  async showPost(
+    @CurrentUser('id') adminId: string,
+    @CurrentUser('role') role: string,
+    @Param('id') postId: string,
+  ) {
+    this.checkAdmin(role);
+    return this.adminService.showPost(adminId, postId);
+  }
+
+  @Delete('posts/:id')
+  @ApiOperation({ summary: '删除帖子' })
+  @ApiParam({ name: 'id', description: '帖子 ID' })
+  async deletePost(
+    @CurrentUser('id') adminId: string,
+    @CurrentUser('role') role: string,
+    @Param('id') postId: string,
+  ) {
+    this.checkAdmin(role);
+    await this.adminService.deletePost(adminId, postId);
+    return { success: true };
+  }
+
   @Get('gallery/pending')
   @ApiOperation({ summary: '待审核画廊列表' })
   async getPendingGallery(
@@ -96,6 +144,53 @@ export class AdminController {
   ) {
     this.checkAdmin(role);
     return this.galleryService.review(adminId, id, dto);
+  }
+
+  @Get('gallery')
+  @ApiOperation({ summary: '全部画廊列表（含已审核/已隐藏）' })
+  async getAllGallery(
+    @CurrentUser('role') role: string,
+    @Query() query: AdminQueryDto,
+  ) {
+    this.checkAdmin(role);
+    return this.galleryService.getAllForAdmin(query);
+  }
+
+  @Put('gallery/:id/hide')
+  @ApiOperation({ summary: '隐藏画廊作品' })
+  @ApiParam({ name: 'id', description: '画廊照片 ID' })
+  async hideGallery(
+    @CurrentUser('id') adminId: string,
+    @CurrentUser('role') role: string,
+    @Param('id') id: string,
+  ) {
+    this.checkAdmin(role);
+    return this.galleryService.hide(adminId, id);
+  }
+
+  @Put('gallery/:id/show')
+  @ApiOperation({ summary: '恢复画廊作品（取消隐藏）' })
+  @ApiParam({ name: 'id', description: '画廊照片 ID' })
+  async showGallery(
+    @CurrentUser('id') adminId: string,
+    @CurrentUser('role') role: string,
+    @Param('id') id: string,
+  ) {
+    this.checkAdmin(role);
+    return this.galleryService.show(adminId, id);
+  }
+
+  @Delete('gallery/:id')
+  @ApiOperation({ summary: '删除画廊作品' })
+  @ApiParam({ name: 'id', description: '画廊照片 ID' })
+  async deleteGallery(
+    @CurrentUser('id') adminId: string,
+    @CurrentUser('role') role: string,
+    @Param('id') id: string,
+  ) {
+    this.checkAdmin(role);
+    await this.galleryService.remove(adminId, id);
+    return { success: true };
   }
 
   @Get('events/pending')

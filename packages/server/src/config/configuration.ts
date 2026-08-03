@@ -46,13 +46,12 @@ export default () => ({
     suspectThreshold: parseInt(process.env.MODERATION_SUSPECT_THRESHOLD || '1', 10),
     caseSensitive: process.env.MODERATION_CASE_SENSITIVE === 'true',
   },
-  // 短信验证码配置
+  // 短信验证码配置（spacemapper.cn 短信服务）
   sms: {
-    provider: process.env.SMS_PROVIDER || 'aliyun',
-    accessKeyId: process.env.SMS_ACCESS_KEY_ID || '',
-    accessKeySecret: process.env.SMS_ACCESS_KEY_SECRET || '',
-    signName: process.env.SMS_SIGN_NAME || '太空猎人',
-    templateCode: process.env.SMS_TEMPLATE_CODE || '',
+    baseUrl: process.env.SMS_BASE_URL || 'https://spacemapper.cn',
+    appId: process.env.SMS_APP_ID || '',
+    appKey: process.env.SMS_APP_KEY || '',
+    appSecret: process.env.SMS_APP_SECRET || '',
     expireSeconds: parseInt(process.env.SMS_EXPIRE_SECONDS || '300', 10),
     dailyLimit: parseInt(process.env.SMS_DAILY_LIMIT || '10', 10),
   },

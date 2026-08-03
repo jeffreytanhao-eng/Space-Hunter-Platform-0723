@@ -54,6 +54,7 @@ export class Post {
    * pending_manual — 待人工审核
    * published — 已发布
    * rejected — 已拒绝
+   * hidden — 已隐藏（管理员操作）
    */
   @Column({ type: 'varchar', length: 24, default: 'pending_auto' })
   status: string;

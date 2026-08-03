@@ -32,11 +32,26 @@ export default function EventsReviewPage() {
 
   useEffect(() => { fetchEvents() }, [fetchEvents])
 
+  const [reviewError, setReviewError] = useState('')
+  const [reviewing, setReviewing] = useState(false)
+
   const handleReview = async () => {
     if (!confirmAction) return
-    await reviewEvent(confirmAction.id, { action: confirmAction.action })
-    setConfirmAction(null)
-    fetchEvents()
+    setReviewing(true)
+    setReviewError('')
+    try {
+      await reviewEvent(confirmAction.id, { action: confirmAction.action })
+      setConfirmAction(null)
+      fetchEvents()
+    } catch (err: unknown) {
+      console.error('活动审核失败:', err)
+      const axiosErr = err as { response?: { data?: { message?: string | string[] } }; message?: string }
+      const backendMsg = axiosErr?.response?.data?.message
+      const msg = Array.isArray(backendMsg) ? backendMsg[0] : backendMsg
+      setReviewError(msg || axiosErr?.message || '审核失败，请稍后重试')
+    } finally {
+      setReviewing(false)
+    }
   }
 
   const totalPages = Math.ceil(total / pageSize)
@@ -88,15 +103,20 @@ export default function EventsReviewPage() {
 
       {/* 确认操作弹窗 */}
       {confirmAction && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60" onClick={() => setConfirmAction(null)}>
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60" onClick={() => !reviewing && setConfirmAction(null)}>
           <div className="mx-4 w-full max-w-sm rounded-xl bg-space-800 p-6" onClick={(e) => e.stopPropagation()}>
             <h2 className="text-lg font-semibold text-star-white">确认操作</h2>
             <p className="mt-2 text-sm text-star-dim">
               确定要{confirmAction.action === 'approve' ? '通过' : '拒绝'}该活动吗？
             </p>
+            {reviewError && (
+              <p className="mt-2 rounded-lg border border-red-500/40 bg-red-500/10 px-3 py-2 text-sm text-red-400">{reviewError}</p>
+            )}
             <div className="mt-4 flex justify-end gap-2">
-              <Button variant="ghost" size="sm" onClick={() => setConfirmAction(null)}>取消</Button>
-              <Button variant={confirmAction.action === 'approve' ? 'primary' : 'danger'} size="sm" onClick={handleReview}>确认</Button>
+              <Button variant="ghost" size="sm" disabled={reviewing} onClick={() => setConfirmAction(null)}>取消</Button>
+              <Button variant={confirmAction.action === 'approve' ? 'primary' : 'danger'} size="sm" disabled={reviewing} onClick={handleReview}>
+                {reviewing ? '处理中…' : '确认'}
+              </Button>
             </div>
           </div>
         </div>

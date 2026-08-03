@@ -47,10 +47,10 @@ export class GalleryController {
     return this.galleryService.findById(id);
   }
 
-  @Post()
+  @Post('apply')
   @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()
-  @ApiOperation({ summary: '申请进入画廊（从已发布照片）' })
+  @ApiOperation({ summary: '申请进入画廊' })
   async apply(
     @CurrentUser('id') userId: string,
     @Body() dto: ApplyGalleryDto,

@@ -49,7 +49,7 @@ function transformGalleryPhoto(bp: BackendGalleryPhoto): GalleryItem {
     likesCount: bp.likeCount,
     isLiked: false,
     fitsMeta: bp.metadata ? bp.metadata : undefined,
-    status: bp.status as 'pending' | 'approved' | 'rejected',
+    status: bp.status as 'pending' | 'approved' | 'rejected' | 'hidden',
     createdAt: bp.createdAt,
     updatedAt: bp.updatedAt,
   }

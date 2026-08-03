@@ -144,6 +144,74 @@ export class AdminService {
     return saved;
   }
 
+  /** 全部帖子列表（含已发布/已隐藏，供管理后台使用） */
+  async getAllPosts(query: AdminQueryDto): Promise<PaginatedResult<Post>> {
+    const { page = 1, pageSize = 20, keyword, status } = query;
+
+    const qb = this.postRepo
+      .createQueryBuilder('p')
+      .leftJoinAndSelect('p.user', 'user')
+      .leftJoinAndSelect('p.section', 'section');
+
+    if (status) {
+      qb.andWhere('p.status = :status', { status });
+    }
+    if (keyword) {
+      qb.andWhere('(p.title ILIKE :keyword OR p.content ILIKE :keyword)', {
+        keyword: `%${keyword}%`,
+      });
+    }
+
+    qb.orderBy('p.createdAt', 'DESC');
+
+    const skip = (page - 1) * pageSize;
+    qb.skip(skip).take(pageSize);
+
+    const [data, total] = await qb.getManyAndCount();
+
+    return { data, total, page, pageSize, totalPages: Math.ceil(total / pageSize) };
+  }
+
+  /** 隐藏帖子（管理员） */
+  async hidePost(adminId: string, postId: string): Promise<Post> {
+    const post = await this.postRepo.findOne({ where: { id: postId } });
+    if (!post) {
+      throw new NotFoundException('帖子不存在');
+    }
+    post.status = 'hidden';
+    const saved = await this.postRepo.save(post);
+    await this.adminLogRepo.save(
+      this.adminLogRepo.create({ adminId, action: 'post_hidden', targetType: 'post', targetId: postId }),
+    );
+    return saved;
+  }
+
+  /** 恢复帖子（取消隐藏，恢复为已发布） */
+  async showPost(adminId: string, postId: string): Promise<Post> {
+    const post = await this.postRepo.findOne({ where: { id: postId } });
+    if (!post) {
+      throw new NotFoundException('帖子不存在');
+    }
+    post.status = 'published';
+    const saved = await this.postRepo.save(post);
+    await this.adminLogRepo.save(
+      this.adminLogRepo.create({ adminId, action: 'post_restored', targetType: 'post', targetId: postId }),
+    );
+    return saved;
+  }
+
+  /** 删除帖子（管理员） */
+  async deletePost(adminId: string, postId: string): Promise<void> {
+    const post = await this.postRepo.findOne({ where: { id: postId } });
+    if (!post) {
+      throw new NotFoundException('帖子不存在');
+    }
+    await this.postRepo.remove(post);
+    await this.adminLogRepo.save(
+      this.adminLogRepo.create({ adminId, action: 'post_deleted', targetType: 'post', targetId: postId }),
+    );
+  }
+
   /** 待审核画廊列表（复用 GalleryService） */
   async getPendingGallery(query: AdminQueryDto) {
     return this.galleryService.getPending({

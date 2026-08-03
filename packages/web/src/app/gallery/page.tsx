@@ -1,9 +1,9 @@
-﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿'use client'
+﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿'use client'
 
 import { useState } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { getGalleryList, applyGallery, downloadOriginal, toggleGalleryLike } from '@/services/gallery'
-import { getPosts } from '@/services/posts'
+import apiClient from '@/lib/api'
 import { Header } from '@/components/layout/header'
 import { Footer } from '@/components/layout/footer'
 import { Card } from '@/components/ui/card'
@@ -18,7 +18,7 @@ import { useTranslation } from '@/lib/i18n'
 import {
   Search, Filter, ArrowUpDown, Heart, Download, X,
   ChevronLeft, ChevronRight, Maximize2, Info, Plus,
-  Loader2, Image as ImageIcon, Star, Eye
+  Loader2, Image as ImageIcon, Star, Eye, Upload
 } from 'lucide-react'
 
 /* 荣耀画廊页 */
@@ -53,29 +53,16 @@ export default function GalleryPage() {
   const [showApplyModal, setShowApplyModal] = useState(false)
   const [applyTitle, setApplyTitle] = useState('')
   const [applyDescription, setApplyDescription] = useState('')
-  const [selectedPhotoId, setSelectedPhotoId] = useState('')
+  const [applyCategory, setApplyCategory] = useState('')
+  const [applyImage, setApplyImage] = useState<File | null>(null)
+  const [applyImagePreview, setApplyImagePreview] = useState('')
   const [applyStatus, setApplyStatus] = useState<'idle' | 'submitting' | 'success'>('idle')
+  const [applyError, setApplyError] = useState('')
 
   /* 画廊列表 */
   const { data: galleryData, isLoading } = useQuery({
     queryKey: ['gallery', page, category, sort, keyword],
     queryFn: () => getGalleryList({ page, pageSize, category: category || undefined, sort, keyword: keyword || undefined }),
-  })
-
-  /* 我的已发布照片（用于申请画廊） */
-  const { data: myPostsData } = useQuery({
-    queryKey: ['myPosts', 'gallery-apply'],
-    queryFn: () => getPosts({ page: 1, pageSize: 50 }),
-    enabled: showApplyModal,
-  })
-
-  /* 申请画廊 */
-  const applyMutation = useMutation({
-    mutationFn: applyGallery,
-    onSuccess: () => {
-      setApplyStatus('success')
-      queryClient.invalidateQueries({ queryKey: ['gallery'] })
-    },
   })
 
   /* 画廊点赞（乐观更新） */
@@ -110,13 +97,55 @@ export default function GalleryPage() {
     setPage(1)
   }
 
-  const handleApply = () => {
-    if (!selectedPhotoId || !applyTitle.trim()) return
-    applyMutation.mutate({
-      photoId: selectedPhotoId,
-      title: applyTitle.trim(),
-      description: applyDescription.trim() || undefined,
-    })
+  /* 选择图片 */
+  const handleImageSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+    if (applyImagePreview) URL.revokeObjectURL(applyImagePreview)
+    setApplyImage(file)
+    setApplyImagePreview(URL.createObjectURL(file))
+  }
+
+  /* 移除图片 */
+  const handleImageRemove = () => {
+    if (applyImagePreview) URL.revokeObjectURL(applyImagePreview)
+    setApplyImage(null)
+    setApplyImagePreview('')
+  }
+
+  /* 提交画廊申请：先上传图片，再提交 */
+  const handleApply = async () => {
+    if (!applyImage || !applyTitle.trim()) {
+      setApplyError('请上传图片并填写标题')
+      return
+    }
+    setApplyStatus('submitting')
+    setApplyError('')
+    try {
+      // 1. 上传图片
+      const formData = new FormData()
+      formData.append('file', applyImage)
+      const { data: uploadRes } = await apiClient.post('/upload', formData, {
+        headers: { 'Content-Type': 'multipart/form-data' },
+      })
+      // 2. 提交画廊申请
+      await applyGallery({
+        imageUrl: uploadRes.url,
+        title: applyTitle.trim(),
+        description: applyDescription.trim() || undefined,
+        category: applyCategory || undefined,
+      })
+      setApplyStatus('success')
+      queryClient.invalidateQueries({ queryKey: ['gallery'] })
+    } catch (err: unknown) {
+      console.error('画廊申请失败:', err)
+      setApplyStatus('idle')
+      // 提取后端错误信息（NestJS 通常返回 { message: '...' }）
+      const axiosErr = err as { response?: { data?: { message?: string | string[] } }; message?: string }
+      const backendMsg = axiosErr?.response?.data?.message
+      const msg = Array.isArray(backendMsg) ? backendMsg[0] : backendMsg
+      setApplyError(msg || axiosErr?.message || '申请失败，请稍后重试')
+    }
   }
 
   const handleDownload = async (id: string) => {
@@ -457,30 +486,43 @@ export default function GalleryPage() {
                 </div>
                 <p className="text-star-white">{t('gallery.applySuccess')}</p>
                 <p className="mt-1 text-sm text-star-dim">{t('gallery.applySuccessHint')}</p>
-                <Button variant="primary" className="mt-4" onClick={() => { setShowApplyModal(false); setApplyStatus('idle'); setApplyTitle(''); setApplyDescription(''); setSelectedPhotoId('') }}>
+                <Button variant="primary" className="mt-4" onClick={() => { setShowApplyModal(false); setApplyStatus('idle'); setApplyTitle(''); setApplyDescription(''); setApplyCategory(''); handleImageRemove() }}>
                   {t('gallery.applyClose')}
                 </Button>
               </div>
             ) : (
               <div className="mt-4 space-y-4">
-                {/* 选择已发布照片 */}
+                {/* 图片上传 */}
                 <div className="space-y-1.5">
-                  <label className="block text-sm text-star-dim">{t('gallery.applySelectPhoto')}</label>
-                  <select
-                    value={selectedPhotoId}
-                    onChange={(e) => setSelectedPhotoId(e.target.value)}
-                    className="w-full rounded-lg border border-space-600 bg-space-700 px-3 py-2 text-sm text-star-white focus:border-neon-cyan/50 focus:outline-none focus:ring-1 focus:ring-neon-cyan/30 transition-colors"
-                  >
-                    <option value="">{t('gallery.applySelectPhotoPlaceholder')}</option>
-                    {myPostsData?.items?.filter(p => p.images && p.images.length > 0).map((post) => (
-                      <option key={post.id} value={post.id}>{post.title}</option>
-                    ))}
-                  </select>
+                  <label className="block text-sm text-star-dim">{t('gallery.applySelectPhoto')} *</label>
+                  {applyImagePreview ? (
+                    <div className="group relative overflow-hidden rounded-lg border border-space-600">
+                      <img src={applyImagePreview} alt="" className="h-48 w-full object-cover" />
+                      <button
+                        onClick={handleImageRemove}
+                        className="absolute right-2 top-2 rounded-full bg-space-900/70 p-1 text-star-dim hover:text-red-400 transition-colors"
+                      >
+                        <X className="h-4 w-4" />
+                      </button>
+                    </div>
+                  ) : (
+                    <label className="flex cursor-pointer flex-col items-center justify-center rounded-lg border-2 border-dashed border-space-600 bg-space-700/50 p-6 transition-colors hover:border-neon-cyan/40">
+                      <Upload className="h-8 w-8 text-star-dim" />
+                      <p className="mt-2 text-sm text-star-dim">{t('gallery.applyUploadHint')}</p>
+                      <p className="mt-1 text-xs text-star-dim/60">JPG / PNG / GIF / FITS</p>
+                      <input
+                        type="file"
+                        accept="image/*,.fits,.fit,.fts"
+                        onChange={handleImageSelect}
+                        className="hidden"
+                      />
+                    </label>
+                  )}
                 </div>
 
                 {/* 标题 */}
                 <div className="space-y-1.5">
-                  <label className="block text-sm text-star-dim">{t('gallery.applyTitle')}</label>
+                  <label className="block text-sm text-star-dim">{t('gallery.applyTitle')} *</label>
                   <input
                     type="text"
                     value={applyTitle}
@@ -488,6 +530,20 @@ export default function GalleryPage() {
                     placeholder={t('gallery.applyTitlePlaceholder')}
                     className="w-full rounded-lg border border-space-600 bg-space-700 px-3 py-2 text-sm text-star-white placeholder:text-star-dim/60 focus:border-neon-cyan/50 focus:outline-none focus:ring-1 focus:ring-neon-cyan/30 transition-colors"
                   />
+                </div>
+
+                {/* 分类 */}
+                <div className="space-y-1.5">
+                  <label className="block text-sm text-star-dim">{t('gallery.applyCategory')}</label>
+                  <select
+                    value={applyCategory}
+                    onChange={(e) => setApplyCategory(e.target.value)}
+                    className="w-full rounded-lg border border-space-600 bg-space-700 px-3 py-2 text-sm text-star-white focus:border-neon-cyan/50 focus:outline-none focus:ring-1 focus:ring-neon-cyan/30 transition-colors"
+                  >
+                    {categories.filter(c => c.value).map((cat) => (
+                      <option key={cat.value} value={cat.value}>{cat.label}</option>
+                    ))}
+                  </select>
                 </div>
 
                 {/* 描述 */}
@@ -502,13 +558,20 @@ export default function GalleryPage() {
                   />
                 </div>
 
+                {/* 错误提示 */}
+                {applyError && (
+                  <div className="rounded-lg border border-red-500/40 bg-red-500/10 px-3 py-2 text-sm text-red-400">
+                    {applyError}
+                  </div>
+                )}
+
                 <div className="flex justify-end gap-3">
                   <Button variant="ghost" onClick={() => setShowApplyModal(false)}>{t('gallery.cancel')}</Button>
                   <Button
                     onClick={handleApply}
-                    disabled={!selectedPhotoId || !applyTitle.trim() || applyMutation.isPending}
+                    disabled={!applyImage || !applyTitle.trim() || applyStatus === 'submitting'}
                   >
-                    {applyMutation.isPending ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
+                    {applyStatus === 'submitting' ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
                     {t('gallery.applySubmit')}
                   </Button>
                 </div>

@@ -65,7 +65,7 @@ export function AdMapViewer({ title, address, lng, lat }: AdMapViewerProps) {
       mapRef.current = map
 
       // 有精确坐标：直接标记
-      if (lng != null && lat != null) {
+      if (lng !== null && lng !== undefined && lat !== null && lat !== undefined) {
         placeMarker(map, lng, lat)
         map.setZoomAndCenter(15, [lng, lat])
         setLoading(false)

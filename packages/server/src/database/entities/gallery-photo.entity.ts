@@ -1,4 +1,4 @@
-﻿﻿﻿﻿﻿﻿﻿import {
+﻿﻿﻿﻿﻿﻿import {
   Entity,
   PrimaryGeneratedColumn,
   Column,
@@ -48,9 +48,13 @@ export class GalleryPhoto {
   @Column({ type: 'varchar', length: 50, nullable: true })
   category: string | null;
 
-  /** 状态: pending/approved/rejected */
+  /** 状态: pending/approved/rejected/hidden */
   @Column({ type: 'varchar', length: 24, default: 'pending' })
   status: string;
+
+  /** AI 初筛结果（本地敏感词过滤） */
+  @Column({ type: 'jsonb', nullable: true })
+  moderation: { result: 'pass' | 'suspect' | 'block'; matchedCategories: string[]; matchedKeywords: string[]; checkedAt: string } | null;
 
   /** 通过后发放积分 */
   @Column({ type: 'int', default: 0, name: 'points_awarded' })

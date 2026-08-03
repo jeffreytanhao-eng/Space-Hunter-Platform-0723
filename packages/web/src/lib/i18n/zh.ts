@@ -1,4 +1,4 @@
-﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿export const zh = {
+﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿export const zh = {
   common: {
     loading: "加载中...",
     save: "保存",
@@ -163,8 +163,9 @@
     applyBtn: "申请进入画廊",
     noPhotos: "暂无画廊作品",
     applyModalTitle: "申请进入画廊",
-    applySelectPhoto: "选择已发布照片",
-    applySelectPhotoPlaceholder: "请选择照片",
+    applySelectPhoto: "上传作品图片",
+    applyUploadHint: "点击或拖拽图片到此处上传",
+    applyCategory: "分类",
     applyTitle: "标题",
     applyTitlePlaceholder: "为你的作品起一个标题",
     applyDescription: "描述（可选）",

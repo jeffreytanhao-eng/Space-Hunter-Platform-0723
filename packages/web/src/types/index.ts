@@ -41,6 +41,7 @@ export interface Post {
   likesCount: number
   commentsCount: number
   isLiked?: boolean
+  status: string
   createdAt: string
   updatedAt: string
 }
@@ -204,7 +205,13 @@ export interface GalleryItem {
   likesCount: number
   isLiked?: boolean
   fitsMeta?: FitsMeta
-  status: 'pending' | 'approved' | 'rejected'
+  status: 'pending' | 'approved' | 'rejected' | 'hidden'
+  moderation?: {
+    result: 'pass' | 'suspect' | 'block'
+    matchedCategories: string[]
+    matchedKeywords: string[]
+    checkedAt: string
+  }
   createdAt: string
   updatedAt: string
 }
@@ -220,9 +227,10 @@ export interface GalleryQuery {
 
 /** 画廊申请参数 */
 export interface ApplyGalleryData {
-  photoId: string
+  imageUrl: string
   title: string
   description?: string
+  category?: string
 }
 
 /** 关注状态 */

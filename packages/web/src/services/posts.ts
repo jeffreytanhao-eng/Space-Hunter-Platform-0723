@@ -48,6 +48,7 @@ function transformPost(bp: BackendPost): Post {
     authorAvatar: bp.user?.avatar || undefined,
     sectionId: bp.sectionId,
     sectionName: bp.section?.name,
+    status: bp.status,
     tags,
     images: images.map((img) => ({
       id: img.url,
@@ -84,25 +85,32 @@ export async function getPost(id: string) {
 
 /** 发帖 */
 export async function createPost(postData: CreatePostData) {
-  // 如果有图片文件，使用 FormData
+  // 先上传图片，获取 URL
+  let imageItems: { url: string; type: 'image' | 'fits' }[] | undefined
+
   if (postData.images && postData.images.length > 0) {
-    const formData = new FormData()
-    formData.append('sectionId', postData.sectionId)
-    formData.append('title', postData.title)
-    formData.append('content', postData.content)
-    if (postData.tags) {
-      formData.append('tags', JSON.stringify(postData.tags))
+    imageItems = []
+    for (const file of postData.images) {
+      const formData = new FormData()
+      formData.append('file', file)
+      const { data: uploadRes } = await apiClient.post('/upload', formData, {
+        headers: { 'Content-Type': 'multipart/form-data' },
+      })
+      const isFits = /\.(fits|fit|fts|tiff|tif|raw|cr2|nef|arw)$/i.test(file.name)
+      imageItems.push({
+        url: uploadRes.url,
+        type: isFits ? 'fits' : 'image',
+      })
     }
-    postData.images.forEach((file) => {
-      formData.append('images', file)
-    })
-    const { data } = await apiClient.post<Post>('/posts', formData, {
-      headers: { 'Content-Type': 'multipart/form-data' },
-    })
-    return data
   }
 
-  const { data } = await apiClient.post<Post>('/posts', postData)
+  const { data } = await apiClient.post<Post>('/posts', {
+    sectionId: postData.sectionId,
+    title: postData.title,
+    content: postData.content,
+    tags: postData.tags,
+    images: imageItems,
+  })
   return data
 }
 

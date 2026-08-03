@@ -35,7 +35,32 @@ export async function getPendingPosts(query?: PostQuery) {
 
 /** 审核帖子 */
 export async function reviewPost(id: string, reviewData: ReviewData) {
-  const { data } = await apiClient.post(`/admin/posts/${id}/review`, reviewData)
+  const status = reviewData.action === 'approve' ? 'published' : 'rejected'
+  const { data } = await apiClient.put(`/admin/posts/${id}/review`, { status, reason: reviewData.reason })
+  return data
+}
+
+/** 获取全部帖子（含已发布/已隐藏） */
+export async function getAllPosts(query?: PostQuery & { status?: string }) {
+  const { data } = await apiClient.get('/admin/posts', { params: query })
+  return normalizePaginated<Post>(data)
+}
+
+/** 隐藏帖子 */
+export async function hidePost(id: string) {
+  const { data } = await apiClient.put(`/admin/posts/${id}/hide`)
+  return data
+}
+
+/** 恢复帖子（取消隐藏） */
+export async function showPost(id: string) {
+  const { data } = await apiClient.put(`/admin/posts/${id}/show`)
+  return data
+}
+
+/** 删除帖子 */
+export async function deletePost(id: string) {
+  const { data } = await apiClient.delete(`/admin/posts/${id}`)
   return data
 }
 
@@ -47,7 +72,32 @@ export async function getPendingGallery(query?: GalleryQuery) {
 
 /** 审核画廊 */
 export async function reviewGallery(id: string, reviewData: ReviewData) {
-  const { data } = await apiClient.post(`/admin/gallery/${id}/review`, reviewData)
+  const status = reviewData.action === 'approve' ? 'approved' : 'rejected'
+  const { data } = await apiClient.put(`/admin/gallery/${id}/review`, { status, reason: reviewData.reason })
+  return data
+}
+
+/** 获取全部画廊（含已审核/已隐藏） */
+export async function getAllGallery(query?: GalleryQuery & { status?: string }) {
+  const { data } = await apiClient.get('/admin/gallery', { params: query })
+  return normalizePaginated<GalleryItem>(data)
+}
+
+/** 隐藏画廊作品 */
+export async function hideGallery(id: string) {
+  const { data } = await apiClient.put(`/admin/gallery/${id}/hide`)
+  return data
+}
+
+/** 恢复画廊作品（取消隐藏） */
+export async function showGallery(id: string) {
+  const { data } = await apiClient.put(`/admin/gallery/${id}/show`)
+  return data
+}
+
+/** 删除画廊作品 */
+export async function deleteGallery(id: string) {
+  const { data } = await apiClient.delete(`/admin/gallery/${id}`)
   return data
 }
 
@@ -59,7 +109,8 @@ export async function getPendingEvents(query?: EventQuery) {
 
 /** 审核活动 */
 export async function reviewEvent(id: string, reviewData: ReviewData) {
-  const { data } = await apiClient.post(`/admin/events/${id}/review`, reviewData)
+  const status = reviewData.action === 'approve' ? 'approved' : 'rejected'
+  const { data } = await apiClient.put(`/admin/events/${id}/review`, { status, reason: reviewData.reason })
   return data
 }
 
