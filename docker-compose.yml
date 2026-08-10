@@ -1,6 +1,13 @@
 # 太空猎人 - 生产环境 Docker Compose 配置
 # 使用方式: docker compose up -d
 
+# 日志轮转配置：限制容器日志大小，防止磁盘被日志占满
+x-logging: &default-logging
+  driver: json-file
+  options:
+    max-size: "20m"
+    max-file: "3"
+
 services:
   # Nginx 反向代理 - 统一入口
   nginx:
@@ -23,6 +30,7 @@ services:
     networks:
       - internal
     restart: unless-stopped
+    logging: *default-logging
 
   # NestJS 后端服务
   backend:
@@ -45,6 +53,7 @@ services:
     networks:
       - internal
     restart: unless-stopped
+    logging: *default-logging
     volumes:
       - ./uploads:/app/packages/server/uploads
 
@@ -63,6 +72,7 @@ services:
     networks:
       - internal
     restart: unless-stopped
+    logging: *default-logging
 
   # PostgreSQL 数据库
   postgres:
@@ -81,6 +91,7 @@ services:
     networks:
       - internal
     restart: unless-stopped
+    logging: *default-logging
 
   # Redis 缓存
   redis:
@@ -116,6 +127,7 @@ services:
     networks:
       - internal
     restart: unless-stopped
+    logging: *default-logging
 
 # 数据持久化卷
 volumes:

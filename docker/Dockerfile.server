@@ -4,8 +4,10 @@ FROM node:18-bullseye-slim AS builder
 
 WORKDIR /app
 
-# 安装构建原生模块所需依赖
-RUN apt-get update && apt-get install -y --no-install-recommends python3 make g++ && rm -rf /var/lib/apt/lists/*
+# 安装构建原生模块所需依赖（切换为阿里云 apt 镜像，服务器为阿里云主机，官方源访问超时）
+RUN sed -i 's|deb.debian.org|mirrors.aliyun.com|g' /etc/apt/sources.list && \
+    sed -i 's|security.debian.org|mirrors.aliyun.com|g' /etc/apt/sources.list && \
+    apt-get update && apt-get install -y --no-install-recommends python3 make g++ && rm -rf /var/lib/apt/lists/*
 
 # 复制依赖声明文件
 COPY package.json package-lock.json ./

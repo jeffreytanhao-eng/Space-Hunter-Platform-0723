@@ -21,8 +21,10 @@
     "format": "prettier --write \"packages/**/*.{ts,tsx,js,jsx,json,md}\""
   },
   "devDependencies": {
-    "typescript": "^5.3.0",
+    "@babel/preset-react": "^7.29.7",
+    "@babel/preset-typescript": "^7.29.7",
+    "eslint": "^8.56.0",
     "prettier": "^3.2.0",
-    "eslint": "^8.56.0"
+    "typescript": "^5.3.0"
   }
 }

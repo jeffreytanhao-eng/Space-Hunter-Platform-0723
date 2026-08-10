@@ -28,6 +28,7 @@ out/
 # Taro 小程序
 .taro/
 .temp/
+.swc/
 
 # IDE
 .idea/
