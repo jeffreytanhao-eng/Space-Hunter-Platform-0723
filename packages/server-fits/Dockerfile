@@ -1,4 +1,4 @@
-﻿﻿# 太空猎人 - FITS 天文数据处理 Worker Dockerfile
+# 太空猎人 - FITS 天文数据处理 Worker Dockerfile
 # 单阶段构建 - 直接安装依赖
 
 FROM python:3.11-slim

@@ -17,6 +17,31 @@ export function Footer() {
             <a href="#" className="hover:text-star-white transition-colors">{t('footer.help')}</a>
           </div>
         </div>
+        <div className="mt-4 flex flex-col items-center justify-center gap-2 border-t border-space-600 pt-4 text-xs text-star-dim sm:flex-row sm:gap-4">
+          <a
+            href="https://beian.miit.gov.cn/"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="hover:text-star-white transition-colors"
+          >
+            京ICP备2026039863号-2
+          </a>
+          <a
+            href="https://www.beian.gov.cn/portal/registerSystemInfo?recordcode=11010502062256"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="flex items-center gap-1.5 hover:text-star-white transition-colors"
+          >
+            <img
+              src="/备案图标.png"
+              alt="公安备案"
+              className="h-4 w-4 flex-none"
+              width="16"
+              height="16"
+            />
+            京公网安备11010502062256号
+          </a>
+        </div>
       </div>
     </footer>
   )

@@ -18,6 +18,7 @@ import { AdminModule } from './modules/admin/admin.module';
 import { UploadModule } from './modules/upload/upload.module';
 import { FitsModule } from './modules/fits/fits.module';
 import { AdsModule } from './modules/ads/ads.module';
+import { VolcModule } from './modules/volc/volc.module';
 import { CsrfMiddleware } from './common/security/csrf.middleware';
 import { RateLimitMiddleware } from './common/security/rate-limit.middleware';
 import { SanitizeMiddleware } from './common/security/sanitize.middleware';
@@ -49,6 +50,7 @@ import { SanitizeMiddleware } from './common/security/sanitize.middleware';
     UploadModule,
     FitsModule,
     AdsModule,
+    VolcModule,
   ],
   controllers: [AppController],
   providers: [AppService],

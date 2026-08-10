@@ -1,390 +1,411 @@
-# Graph Report - 太空猎人  (2026-07-27)
+# Graph Report - d:\项目\太空猎人  (2026-08-10)
 
 ## Corpus Check
-- 257 files · ~62,671 words
+- 272 files · ~92,611 words
 - Verdict: corpus is large enough that graph structure adds value.
 
 ## Summary
-- 1196 nodes · 2299 edges · 110 communities (76 shown, 34 thin omitted)
-- Extraction: 100% EXTRACTED · 0% INFERRED · 0% AMBIGUOUS · INFERRED: 2 edges (avg confidence: 0.8)
+- 1417 nodes · 2742 edges · 112 communities (82 shown, 30 thin omitted)
+- Extraction: 100% EXTRACTED · 0% INFERRED · 0% AMBIGUOUS · INFERRED: 9 edges (avg confidence: 0.87)
 - Token cost: 0 input · 0 output
 
-## Graph Freshness
-- Built from commit: `48d4315`
-- Run `git rev-parse HEAD` and compare to check if the graph is stale.
-- Run `graphify update .` after code changes (no API cost).
-
 ## Community Hubs (Navigation)
-- [[_COMMUNITY_Community 0|Community 0]]
-- [[_COMMUNITY_Community 1|Community 1]]
-- [[_COMMUNITY_Community 2|Community 2]]
-- [[_COMMUNITY_Community 3|Community 3]]
-- [[_COMMUNITY_Community 4|Community 4]]
-- [[_COMMUNITY_Community 5|Community 5]]
-- [[_COMMUNITY_Community 6|Community 6]]
-- [[_COMMUNITY_Community 7|Community 7]]
-- [[_COMMUNITY_Community 8|Community 8]]
-- [[_COMMUNITY_Community 9|Community 9]]
-- [[_COMMUNITY_Community 10|Community 10]]
-- [[_COMMUNITY_Community 11|Community 11]]
-- [[_COMMUNITY_Community 12|Community 12]]
-- [[_COMMUNITY_Community 13|Community 13]]
-- [[_COMMUNITY_Community 14|Community 14]]
-- [[_COMMUNITY_Community 15|Community 15]]
-- [[_COMMUNITY_Community 16|Community 16]]
-- [[_COMMUNITY_Community 17|Community 17]]
-- [[_COMMUNITY_Community 18|Community 18]]
-- [[_COMMUNITY_Community 19|Community 19]]
-- [[_COMMUNITY_Community 20|Community 20]]
-- [[_COMMUNITY_Community 21|Community 21]]
-- [[_COMMUNITY_Community 22|Community 22]]
-- [[_COMMUNITY_Community 23|Community 23]]
-- [[_COMMUNITY_Community 24|Community 24]]
-- [[_COMMUNITY_Community 25|Community 25]]
-- [[_COMMUNITY_Community 26|Community 26]]
-- [[_COMMUNITY_Community 27|Community 27]]
-- [[_COMMUNITY_Community 28|Community 28]]
-- [[_COMMUNITY_Community 29|Community 29]]
-- [[_COMMUNITY_Community 30|Community 30]]
-- [[_COMMUNITY_Community 31|Community 31]]
-- [[_COMMUNITY_Community 32|Community 32]]
-- [[_COMMUNITY_Community 33|Community 33]]
-- [[_COMMUNITY_Community 34|Community 34]]
-- [[_COMMUNITY_Community 35|Community 35]]
-- [[_COMMUNITY_Community 36|Community 36]]
-- [[_COMMUNITY_Community 37|Community 37]]
-- [[_COMMUNITY_Community 38|Community 38]]
-- [[_COMMUNITY_Community 39|Community 39]]
-- [[_COMMUNITY_Community 40|Community 40]]
-- [[_COMMUNITY_Community 41|Community 41]]
-- [[_COMMUNITY_Community 42|Community 42]]
-- [[_COMMUNITY_Community 43|Community 43]]
-- [[_COMMUNITY_Community 44|Community 44]]
-- [[_COMMUNITY_Community 45|Community 45]]
-- [[_COMMUNITY_Community 46|Community 46]]
-- [[_COMMUNITY_Community 47|Community 47]]
-- [[_COMMUNITY_Community 48|Community 48]]
-- [[_COMMUNITY_Community 49|Community 49]]
-- [[_COMMUNITY_Community 50|Community 50]]
-- [[_COMMUNITY_Community 51|Community 51]]
-- [[_COMMUNITY_Community 52|Community 52]]
-- [[_COMMUNITY_Community 53|Community 53]]
-- [[_COMMUNITY_Community 54|Community 54]]
-- [[_COMMUNITY_Community 55|Community 55]]
-- [[_COMMUNITY_Community 56|Community 56]]
-- [[_COMMUNITY_Community 57|Community 57]]
-- [[_COMMUNITY_Community 58|Community 58]]
-- [[_COMMUNITY_Community 59|Community 59]]
-- [[_COMMUNITY_Community 60|Community 60]]
-- [[_COMMUNITY_Community 61|Community 61]]
-- [[_COMMUNITY_Community 62|Community 62]]
-- [[_COMMUNITY_Community 63|Community 63]]
-- [[_COMMUNITY_Community 64|Community 64]]
-- [[_COMMUNITY_Community 65|Community 65]]
-- [[_COMMUNITY_Community 66|Community 66]]
-- [[_COMMUNITY_Community 68|Community 68]]
-- [[_COMMUNITY_Community 69|Community 69]]
-- [[_COMMUNITY_Community 70|Community 70]]
-- [[_COMMUNITY_Community 71|Community 71]]
-- [[_COMMUNITY_Community 72|Community 72]]
-- [[_COMMUNITY_Community 73|Community 73]]
-- [[_COMMUNITY_Community 74|Community 74]]
-- [[_COMMUNITY_Community 75|Community 75]]
-- [[_COMMUNITY_Community 79|Community 79]]
-- [[_COMMUNITY_Community 94|Community 94]]
-- [[_COMMUNITY_Community 95|Community 95]]
-- [[_COMMUNITY_Community 96|Community 96]]
-- [[_COMMUNITY_Community 97|Community 97]]
-- [[_COMMUNITY_Community 98|Community 98]]
-- [[_COMMUNITY_Community 99|Community 99]]
-- [[_COMMUNITY_Community 100|Community 100]]
-- [[_COMMUNITY_Community 101|Community 101]]
-- [[_COMMUNITY_Community 102|Community 102]]
-- [[_COMMUNITY_Community 103|Community 103]]
-- [[_COMMUNITY_Community 104|Community 104]]
-- [[_COMMUNITY_Community 105|Community 105]]
+- [[_COMMUNITY_Admin Management & Types|Admin Management & Types]]
+- [[_COMMUNITY_FITS Astrometry Processing|FITS Astrometry Processing]]
+- [[_COMMUNITY_Project Architecture & Documentation|Project Architecture & Documentation]]
+- [[_COMMUNITY_Admin Backend (NestJS)|Admin Backend (NestJS)]]
+- [[_COMMUNITY_Taro Miniapp (WeChat)|Taro Miniapp (WeChat)]]
+- [[_COMMUNITY_Web Frontend Pages|Web Frontend Pages]]
+- [[_COMMUNITY_Ads & Map Integration|Ads & Map Integration]]
+- [[_COMMUNITY_Web Dependencies|Web Dependencies]]
+- [[_COMMUNITY_Auth Module|Auth Module]]
+- [[_COMMUNITY_Posts & Comments Module|Posts & Comments Module]]
+- [[_COMMUNITY_Points System|Points System]]
+- [[_COMMUNITY_Gallery Module|Gallery Module]]
+- [[_COMMUNITY_Events Module|Events Module]]
+- [[_COMMUNITY_Follows Module|Follows Module]]
+- [[_COMMUNITY_Upload Module|Upload Module]]
+- [[_COMMUNITY_FITS Worker Processing|FITS Worker Processing]]
+- [[_COMMUNITY_Users Module|Users Module]]
+- [[_COMMUNITY_Volc Engine Integration|Volc Engine Integration]]
+- [[_COMMUNITY_Common Utilities & Security|Common Utilities & Security]]
+- [[_COMMUNITY_Database Entities|Database Entities]]
+- [[_COMMUNITY_Server Config & Module|Server Config & Module]]
+- [[_COMMUNITY_FITS Worker Docker|FITS Worker Docker]]
+- [[_COMMUNITY_Server Package Config|Server Package Config]]
+- [[_COMMUNITY_Server Test|Server Test]]
+- [[_COMMUNITY_FITS Worker Dependencies|FITS Worker Dependencies]]
+- [[_COMMUNITY_Docker Compose|Docker Compose]]
+- [[_COMMUNITY_Miniapp Config|Miniapp Config]]
+- [[_COMMUNITY_Shared Types|Shared Types]]
+- [[_COMMUNITY_Web Config|Web Config]]
+- [[_COMMUNITY_Web i18n|Web i18n]]
+- [[_COMMUNITY_Web Store|Web Store]]
+- [[_COMMUNITY_UI Components|UI Components]]
+- [[_COMMUNITY_Web Auth Service|Web Auth Service]]
+- [[_COMMUNITY_Fits Asset Entity|Fits Asset Entity]]
+- [[_COMMUNITY_Device Module Entities|Device Module Entities]]
+- [[_COMMUNITY_Server-fits Worker|Server-fits Worker]]
+- [[_COMMUNITY_Server-fits Preview|Server-fits Preview]]
+- [[_COMMUNITY_Sections Module|Sections Module]]
+- [[_COMMUNITY_Redis Module|Redis Module]]
+- [[_COMMUNITY_Seed Data|Seed Data]]
+- [[_COMMUNITY_Migrations|Migrations]]
+- [[_COMMUNITY_Web ESLint|Web ESLint]]
+- [[_COMMUNITY_Server ESLint|Server ESLint]]
+- [[_COMMUNITY_Root ESLint|Root ESLint]]
+- [[_COMMUNITY_Root Package|Root Package]]
+- [[_COMMUNITY_Nginx Config|Nginx Config]]
+- [[_COMMUNITY_Dockerfile Config|Dockerfile Config]]
+- [[_COMMUNITY_Root Config|Root Config]]
+- [[_COMMUNITY_Miniapp Post-card|Miniapp Post-card]]
+- [[_COMMUNITY_Miniapp Gallery|Miniapp Gallery]]
+- [[_COMMUNITY_Miniapp Points|Miniapp Points]]
+- [[_COMMUNITY_Miniapp Events|Miniapp Events]]
+- [[_COMMUNITY_Miniapp Index|Miniapp Index]]
+- [[_COMMUNITY_Miniapp Login|Miniapp Login]]
+- [[_COMMUNITY_Miniapp Post-detail|Miniapp Post-detail]]
+- [[_COMMUNITY_Miniapp Profile|Miniapp Profile]]
+- [[_COMMUNITY_Miniapp Config Files|Miniapp Config Files]]
+- [[_COMMUNITY_Miniapp Services|Miniapp Services]]
+- [[_COMMUNITY_Miniapp Auth Store|Miniapp Auth Store]]
+- [[_COMMUNITY_Miniapp Request Utils|Miniapp Request Utils]]
+- [[_COMMUNITY_Miniapp App Config|Miniapp App Config]]
+- [[_COMMUNITY_SMS Verification API|SMS Verification API]]
+- [[_COMMUNITY_FITS Technical Design|FITS Technical Design]]
+- [[_COMMUNITY_Deployment Plan|Deployment Plan]]
+- [[_COMMUNITY_Devices Spec|Devices Spec]]
+- [[_COMMUNITY_Implement Spec v2|Implement Spec v2]]
+- [[_COMMUNITY_Web Volc Test|Web Volc Test]]
+- [[_COMMUNITY_Fits Compare Viewer|Fits Compare Viewer]]
+- [[_COMMUNITY_Starfield Effect|Starfield Effect]]
+- [[_COMMUNITY_Language Switcher|Language Switcher]]
+- [[_COMMUNITY_Locale Initializer|Locale Initializer]]
+- [[_COMMUNITY_Admin Login Page|Admin Login Page]]
+- [[_COMMUNITY_Gallery Page|Gallery Page]]
+- [[_COMMUNITY_Events Page|Events Page]]
+- [[_COMMUNITY_Points Page|Points Page]]
+- [[_COMMUNITY_Post Detail Page|Post Detail Page]]
+- [[_COMMUNITY_Profile Page|Profile Page]]
+- [[_COMMUNITY_Follow Feed|Follow Feed]]
+- [[_COMMUNITY_Web Services|Web Services]]
+- [[_COMMUNITY_Web Lib Utils|Web Lib Utils]]
+- [[_COMMUNITY_Web Lib Auth|Web Lib Auth]]
+- [[_COMMUNITY_Web Lib API|Web Lib API]]
+- [[_COMMUNITY_Web Types|Web Types]]
+- [[_COMMUNITY_Community 83|Community 83]]
+- [[_COMMUNITY_Community 86|Community 86]]
+- [[_COMMUNITY_Community 87|Community 87]]
+- [[_COMMUNITY_Community 88|Community 88]]
+- [[_COMMUNITY_Community 90|Community 90]]
 - [[_COMMUNITY_Community 106|Community 106]]
 - [[_COMMUNITY_Community 107|Community 107]]
 - [[_COMMUNITY_Community 108|Community 108]]
 - [[_COMMUNITY_Community 109|Community 109]]
+- [[_COMMUNITY_Community 110|Community 110]]
+- [[_COMMUNITY_Community 111|Community 111]]
 
 ## God Nodes (most connected - your core abstractions)
-1. `User` - 49 edges
-2. `Post` - 35 edges
-3. `useTranslation()` - 25 edges
-4. `RedisService` - 25 edges
-5. `useAuthStore` - 25 edges
-6. `compilerOptions` - 24 edges
-7. `FitsAsset` - 22 edges
-8. `PointsTransaction` - 21 edges
-9. `Event` - 19 edges
-10. `GalleryPhoto` - 18 edges
+1. `User` - 51 edges
+2. `Post` - 38 edges
+3. `useAuthStore` - 29 edges
+4. `useTranslation()` - 27 edges
+5. `AdminController` - 26 edges
+6. `RedisService` - 25 edges
+7. `compilerOptions` - 24 edges
+8. `FitsAsset` - 22 edges
+9. `GalleryService` - 22 edges
+10. `GalleryPhoto` - 21 edges
 
 ## Surprising Connections (you probably didn't know these)
-- `PostDetailPage()` --calls--> `useAuthStore`  [EXTRACTED]
-  packages/web/src/app/post/[id]/page.tsx → packages/web/src/stores/auth-store.ts
-- `ProfileContent()` --calls--> `useAuthStore`  [EXTRACTED]
-  packages/web/src/app/profile/page.tsx → packages/web/src/stores/auth-store.ts
-- `EventSignup` --references--> `User`  [EXTRACTED]
-  packages/server/src/database/entities/event-signup.entity.ts → packages/server/src/database/entities/user.entity.ts
-- `FitsAsset` --references--> `Post`  [EXTRACTED]
-  packages/server/src/database/entities/fits-asset.entity.ts → packages/server/src/database/entities/post.entity.ts
-- `FitsAsset` --references--> `User`  [EXTRACTED]
-  packages/server/src/database/entities/fits-asset.entity.ts → packages/server/src/database/entities/user.entity.ts
+- `Next.js 前端网页` --integrates--> `火山引擎图像增强`  [INFERRED]
+  README.md → packages/server/src/modules/volc/volc.service.ts
+- `速率限制` --protects--> `NestJS 后端服务`  [EXTRACTED]
+  packages/server/src/common/security/rate-limit.middleware.ts → README.md
+- `NestJS 后端服务` --integrates--> `火山引擎图像增强`  [EXTRACTED]
+  README.md → packages/server/src/modules/volc/volc.service.ts
+- `Apple Touch Icon` --used_by--> `Next.js 前端网页`  [EXTRACTED]
+  packages/web/public/apple-touch-icon.png → README.md
+- `App Icon 192px` --used_by--> `Next.js 前端网页`  [EXTRACTED]
+  packages/web/public/icon-192.png → README.md
 
-## Communities (110 total, 34 thin omitted)
+## Communities (112 total, 30 thin omitted)
 
-### Community 0 - "Community 0"
-Cohesion: 0.19
-Nodes (10): defaultModerationKeywords, MODERATION_CATEGORIES, ModerationCategory, ModerationKeywords, ModerationModule, ModerationService, ModerationDetail, ModerationOptions (+2 more)
+### Community 0 - "Admin Management & Types"
+Cohesion: 0.07
+Nodes (42): SectionAdmin, adjustPoints(), deleteGallery(), deletePost(), getAllGallery(), getAllPosts(), getLogs(), getPendingEvents() (+34 more)
 
-### Community 1 - "Community 1"
+### Community 1 - "FITS Astrometry Processing"
+Cohesion: 0.06
+Nodes (42): _get_catalog(), health_check(), restore(), solve(), solve_fits_upload(), _to_2d(), GaiaLiteCatalog, haversine_deg() (+34 more)
+
+### Community 2 - "Project Architecture & Documentation"
+Cohesion: 0.06
+Nodes (50): 架构决策记录 ADR, 后台管理系统, 天文测量解算器, 腾讯云 COS 图片存储, CSRF 跨站防护, 内容审核系统, 设备数据模块, Docker Compose 部署 (+42 more)
+
+### Community 3 - "Admin Backend (NestJS)"
+Cohesion: 0.07
+Nodes (6): AdminController, AdminService, AdjustPointsDto, AdminQueryDto, ManageUserDto, ReviewPostDto
+
+### Community 4 - "Taro Miniapp (WeChat)"
 Cohesion: 0.07
 Nodes (30): STATUS_MAP, GALLERY_CATEGORIES, CATEGORIES, TABS, PostCardProps, authApi, AuthUser, CommentItem (+22 more)
 
-### Community 2 - "Community 2"
-Cohesion: 0.06
-Nodes (11): AdminController, AdminService, AdjustPointsDto, AdminQueryDto, ApplyGalleryDto, ManageUserDto, QueryGalleryDto, ReviewGalleryDto (+3 more)
-
-### Community 3 - "Community 3"
-Cohesion: 0.13
-Nodes (23): HomeContent(), EventsPage(), StatusBadge(), GalleryPage(), useTranslation(), Footer(), Header(), Sidebar() (+15 more)
-
-### Community 4 - "Community 4"
-Cohesion: 0.08
-Nodes (38): SectionAdmin, adjustPoints(), getPendingEvents(), getPendingGallery(), getPendingPosts(), getPendingSections(), getPointsTransactions(), getUsers() (+30 more)
-
-### Community 5 - "Community 5"
+### Community 5 - "Web Frontend Pages"
 Cohesion: 0.12
-Nodes (9): FitsAsset, adminLogRepo, cosService, createdPhoto, dto, fitsAssetRepo, mockPhoto, CosModule (+1 more)
+Nodes (23): AdminLayout(), navItems, HomeContent(), Providers(), EventsPage(), GalleryPage(), useTranslation(), Footer() (+15 more)
 
-### Community 6 - "Community 6"
-Cohesion: 0.15
-Nodes (10): Starfield(), cn(), sendSmsCode(), AuthResponse, Button(), ButtonProps, sizes, variants (+2 more)
+### Community 6 - "Ads & Map Integration"
+Cohesion: 0.11
+Nodes (22): AddressPicker(), AddressPickerProps, AddressSelectResult, PoiResult, AdMapViewer(), AdMapViewerProps, AdCard(), MapModal() (+14 more)
 
-### Community 7 - "Community 7"
+### Community 7 - "Web Dependencies"
 Cohesion: 0.06
 Nodes (30): dependencies, axios, clsx, date-fns, lucide-react, next, next-themes, react (+22 more)
 
-### Community 8 - "Community 8"
-Cohesion: 0.14
-Nodes (8): CreateEventDto, QueryEventDto, ReviewEventDto, Event, EventSignup, EventsController, EventsService, PaginatedResult
+### Community 8 - "Auth Module"
+Cohesion: 0.13
+Nodes (7): Ad, AdsController, AdsModule, AdsService, DEFAULT_ADS, CreateAdDto, UpdateAdDto
 
-### Community 9 - "Community 9"
+### Community 9 - "Posts & Comments Module"
+Cohesion: 0.10
+Nodes (9): PointsTransaction, PaginatedResult, PointsService, existingTx, mockManager, mockUser, RedisService, Reward (+1 more)
+
+### Community 10 - "Points System"
 Cohesion: 0.07
 Nodes (27): dependencies, react, react-dom, @tarojs/cli, @tarojs/components, @tarojs/plugin-framework-react, @tarojs/runtime, @tarojs/taro (+19 more)
 
-### Community 10 - "Community 10"
+### Community 11 - "Gallery Module"
 Cohesion: 0.07
 Nodes (27): compilerOptions, allowJs, baseUrl, declaration, declarationMap, esModuleInterop, forceConsistentCasingInFileNames, isolatedModules (+19 more)
 
-### Community 11 - "Community 11"
-Cohesion: 0.05
-Nodes (19): CurrentUser, CreateSectionDto, FitsCallbackDto, FitsStatusQueryDto, UpdateSectionDto, Follow, FitsController, FitsService (+11 more)
+### Community 12 - "Events Module"
+Cohesion: 0.12
+Nodes (5): CreateEventDto, QueryEventDto, ReviewEventDto, EventsController, EventsService
 
-### Community 12 - "Community 12"
+### Community 13 - "Follows Module"
+Cohesion: 0.28
+Nodes (11): PaginatedResult, AdminLog, DeviceProcessingTask, DeviceUpload, Event, EventSignup, User, EventsModule (+3 more)
+
+### Community 14 - "Upload Module"
 Cohesion: 0.14
 Nodes (6): CreatePostDto, ImageItemDto, QueryPostDto, UpdatePostDto, PostsController, PostsService
 
-### Community 13 - "Community 13"
-Cohesion: 0.13
-Nodes (20): code:block1 (packages/), code:bash (# 安装所有依赖), code:bash (# 后端开发（热重载）), code:bash (# 后端单元测试), code:block5 (.), code:bash (# 开发环境), code:bash (# 交互式图谱（浏览器打开）), Docker 部署 (+12 more)
-
-### Community 14 - "Community 14"
-Cohesion: 0.10
-Nodes (11): QueryTransactionsDto, RedeemDto, PointsTransaction, PointsController, PaginatedResult, PointsService, existingTx, mockManager (+3 more)
-
-### Community 15 - "Community 15"
+### Community 15 - "FITS Worker Processing"
 Cohesion: 0.19
-Nodes (5): AuthController, LoginDto, RegisterDto, SendSmsCodeDto, WechatLoginDto
+Nodes (11): FitsAsset, Post, Section, PaginatedResult, adminLogRepo, cosService, createdPhoto, dto (+3 more)
 
-### Community 16 - "Community 16"
-Cohesion: 0.13
-Nodes (17): ProfileContent(), followUser(), getFollowers(), getFollowing(), getFollowStatus(), unfollowUser(), getMe(), getUser() (+9 more)
+### Community 16 - "Users Module"
+Cohesion: 0.12
+Nodes (11): CommentsController, CommentsService, PaginatedResult, CreateCommentDto, Comment, commentRepo, createdPost, dto (+3 more)
 
-### Community 17 - "Community 17"
-Cohesion: 0.16
-Nodes (9): AdminModule, ConfigModule, DatabaseModule, EventsModule, FitsModule, PostsModule, SectionsModule, AppModule (+1 more)
+### Community 17 - "Volc Engine Integration"
+Cohesion: 0.19
+Nodes (10): defaultModerationKeywords, MODERATION_CATEGORIES, ModerationCategory, ModerationKeywords, ModerationModule, ModerationService, ModerationDetail, ModerationOptions (+2 more)
 
-### Community 18 - "Community 18"
+### Community 18 - "Common Utilities & Security"
+Cohesion: 0.12
+Nodes (6): VolcController, VolcModule, AiUpscaleResult, EnhanceResult, UploadUrlResult, VolcService
+
+### Community 19 - "Database Entities"
+Cohesion: 0.12
+Nodes (17): PostDetailPage(), BackendComment, BackendPaginated, createComment(), deleteComment(), getComments(), BackendPaginated, BackendPost (+9 more)
+
+### Community 20 - "Server Config & Module"
+Cohesion: 0.14
+Nodes (11): AdminModule, AuthModule, CommentsModule, ConfigModule, DatabaseModule, FitsModule, FollowsModule, PostsModule (+3 more)
+
+### Community 21 - "FITS Worker Docker"
+Cohesion: 0.14
+Nodes (12): inter, metadata, LocaleInitializer(), en, DeepValue, TranslationKey, translations, zh (+4 more)
+
+### Community 22 - "Server Package Config"
 Cohesion: 0.10
-Nodes (20): dependencies, bcrypt, class-transformer, class-validator, cos-nodejs-sdk-v5, ioredis, multer, @nestjs/common (+12 more)
+Nodes (21): dependencies, bcrypt, class-transformer, class-validator, cos-nodejs-sdk-v5, ioredis, multer, @nestjs/common (+13 more)
 
-### Community 19 - "Community 19"
+### Community 23 - "Server Test"
+Cohesion: 0.16
+Nodes (14): cn(), getUsers(), manageUser(), AdminUser, Avatar(), AvatarProps, sizeStyles, Badge() (+6 more)
+
+### Community 24 - "FITS Worker Dependencies"
+Cohesion: 0.15
+Nodes (6): FitsCallbackDto, FitsStatusQueryDto, FitsController, FitsService, InternalJwtPayload, verifyInternalToken()
+
+### Community 25 - "Docker Compose"
+Cohesion: 0.18
+Nodes (5): CreateSectionDto, UpdateSectionDto, SectionsController, SectionsModule, SectionsService
+
+### Community 26 - "Miniapp Config"
+Cohesion: 0.10
+Nodes (19): compilerOptions, baseUrl, emitDecoratorMetadata, esModuleInterop, experimentalDecorators, lib, module, moduleResolution (+11 more)
+
+### Community 27 - "Shared Types"
+Cohesion: 0.16
+Nodes (13): Starfield(), LoginMode, login(), loginWithPassword(), normalizeAuthResponse(), register(), sendSmsCode(), wechatLogin() (+5 more)
+
+### Community 28 - "Web Config"
+Cohesion: 0.13
+Nodes (8): CosModule, CosService, UploadModule, ASTRO_ALLOWED_FORMATS, ASTRO_ALLOWED_MIMES, IMAGE_ALLOWED_FORMATS, IMAGE_ALLOWED_MIMES, MAGIC_NUMBERS
+
+### Community 29 - "Web i18n"
+Cohesion: 0.17
+Nodes (7): UpdatePrivacyDto, UpdateProfileDto, UsersController, auditFields(), auditText(), findSensitiveWord(), SENSITIVE_WORDS
+
+### Community 30 - "Web Store"
 Cohesion: 0.11
 Nodes (19): devDependencies, eslint, jest, @nestjs/cli, @nestjs/schematics, @nestjs/testing, prettier, ts-jest (+11 more)
 
-### Community 20 - "Community 20"
-Cohesion: 0.11
-Nodes (18): compilerOptions, baseUrl, emitDecoratorMetadata, experimentalDecorators, lib, module, moduleResolution, noUnusedLocals (+10 more)
-
-### Community 21 - "Community 21"
-Cohesion: 0.33
-Nodes (11): PaginatedResult, AdminLog, DeviceProcessingTask, DeviceUpload, GalleryPhoto, Post, Section, User (+3 more)
-
-### Community 22 - "Community 22"
+### Community 31 - "UI Components"
 Cohesion: 0.11
 Nodes (18): compilerOptions, allowJs, esModuleInterop, incremental, isolatedModules, jsx, lib, module (+10 more)
 
-### Community 23 - "Community 23"
+### Community 32 - "Web Auth Service"
 Cohesion: 0.11
 Nodes (18): description, devDependencies, eslint, prettier, typescript, engines, node, name (+10 more)
 
-### Community 24 - "Community 24"
+### Community 33 - "Fits Asset Entity"
 Cohesion: 0.11
 Nodes (18): compilerOptions, declaration, declarationMap, esModuleInterop, forceConsistentCasingInFileNames, isolatedModules, lib, module (+10 more)
 
-### Community 25 - "Community 25"
-Cohesion: 0.10
-Nodes (20): PostDetailPage(), apiClient, token, BackendComment, BackendPaginated, createComment(), deleteComment(), getComments() (+12 more)
+### Community 34 - "Device Module Entities"
+Cohesion: 0.15
+Nodes (14): ProfileContent(), followUser(), getFollowers(), getFollowing(), getFollowStatus(), unfollowUser(), getMe(), getUser() (+6 more)
 
-### Community 26 - "Community 26"
-Cohesion: 0.25
-Nodes (6): AppDataSource, mockComments, mockGallery, MockPost, mockPosts, mockUsers
+### Community 35 - "Server-fits Worker"
+Cohesion: 0.18
+Nodes (5): AuthController, LoginDto, RegisterDto, SendSmsCodeDto, WechatLoginDto
 
-### Community 27 - "Community 27"
+### Community 36 - "Server-fits Preview"
 Cohesion: 0.12
 Nodes (15): appid, compileType, condition, description, miniprogramRoot, projectname, setting, bigPackageSizeSupport (+7 more)
 
-### Community 28 - "Community 28"
-Cohesion: 0.14
-Nodes (5): RedisService, DEFAULT_CONFIG, RateLimitConfig, RateLimitMiddleware, ROUTE_CONFIGS
+### Community 38 - "Redis Module"
+Cohesion: 0.28
+Nodes (7): CurrentUser, ReviewGalleryDto, JwtAuthGuard, ASTRO_EXTENSIONS, ASTRO_MIMES, AiUpscaleDto, EnhanceImageDto
 
-### Community 29 - "Community 29"
-Cohesion: 0.23
-Nodes (3): UpdatePrivacyDto, UpdateProfileDto, UsersController
+### Community 39 - "Seed Data"
+Cohesion: 0.17
+Nodes (3): ApplyGalleryDto, QueryGalleryDto, GalleryController
 
-### Community 31 - "Community 31"
+### Community 40 - "Migrations"
+Cohesion: 0.19
+Nodes (9): getBalance(), getRewards(), getTransactions(), redeem(), Reward, TransactionQuery, Card(), CardProps (+1 more)
+
+### Community 41 - "Web ESLint"
+Cohesion: 0.19
+Nodes (12): apiClient, token, applyGallery(), BackendGalleryPhoto, BackendPaginated, downloadOriginal(), getGalleryDetail(), getGalleryList() (+4 more)
+
+### Community 42 - "Server ESLint"
 Cohesion: 0.14
 Nodes (13): extends, ignorePatterns, parser, parserOptions, project, sourceType, plugins, root (+5 more)
 
-### Community 32 - "Community 32"
-Cohesion: 0.18
-Nodes (11): BackendEvent, BackendPaginated, cancelSignup(), createEvent(), getEvent(), getEvents(), getMyEvents(), signupEvent() (+3 more)
+### Community 45 - "Nginx Config"
+Cohesion: 0.22
+Nodes (11): StatusBadge(), BackendEvent, BackendPaginated, cancelSignup(), getEvent(), getEvents(), getMyEvents(), signupEvent() (+3 more)
 
-### Community 33 - "Community 33"
+### Community 46 - "Dockerfile Config"
+Cohesion: 0.29
+Nodes (3): Follow, FollowsService, PaginatedResult
+
+### Community 48 - "Miniapp Post-card"
+Cohesion: 0.26
+Nodes (8): CompareViewerProps, extractError(), volcAiUpscale(), volcEnhance(), volcUpload(), ModelResult, MODELS, VolcTestPage()
+
+### Community 49 - "Miniapp Gallery"
 Cohesion: 0.17
 Nodes (11): description, devDependencies, typescript, main, name, private, scripts, build (+3 more)
 
-### Community 34 - "Community 34"
-Cohesion: 0.27
-Nodes (8): getBalance(), getRewards(), getTransactions(), redeem(), Reward, TransactionQuery, Skeleton(), SkeletonProps
-
-### Community 35 - "Community 35"
-Cohesion: 0.33
-Nodes (4): AppDataSource, commentTemplates, NewPost, newPosts
-
-### Community 36 - "Community 36"
-Cohesion: 0.20
-Nodes (6): CommentsController, CommentsModule, CommentsService, PaginatedResult, CreateCommentDto, Comment
-
-### Community 37 - "Community 37"
-Cohesion: 0.20
-Nodes (10): scripts, build, lint, start, start:debug, start:dev, start:prod, test (+2 more)
-
-### Community 38 - "Community 38"
-Cohesion: 0.36
-Nodes (3): AppController, AppService, result
-
-### Community 39 - "Community 39"
-Cohesion: 0.22
-Nodes (9): jest, collectCoverageFrom, coverageDirectory, moduleFileExtensions, rootDir, testEnvironment, testRegex, transform (+1 more)
-
-### Community 40 - "Community 40"
-Cohesion: 0.29
-Nodes (8): applyGallery(), BackendGalleryPhoto, BackendPaginated, downloadOriginal(), getGalleryDetail(), getGalleryList(), transformGalleryPhoto(), ApplyGalleryData
-
-### Community 41 - "Community 41"
-Cohesion: 0.25
-Nodes (7): IApiResponse, ImageFormat, IPaginatedResponse, IPaginationParams, IUser, ProcessingStatus, UserRole
-
-### Community 42 - "Community 42"
-Cohesion: 0.67
-Nodes (3): NestJS Backend Server, Python FITS Worker, Taro WeChat Miniapp
-
-### Community 43 - "Community 43"
-Cohesion: 0.29
-Nodes (6): moduleFileExtensions, rootDir, testEnvironment, testRegex, transform, ^.+\\.(t|j)s$
-
-### Community 44 - "Community 44"
-Cohesion: 0.29
-Nodes (6): compilerOptions, outDir, rootDir, exclude, extends, include
-
-### Community 45 - "Community 45"
-Cohesion: 0.13
-Nodes (12): inter, metadata, LocaleInitializer(), Providers(), en, DeepValue, TranslationKey, translations (+4 more)
-
-### Community 48 - "Community 48"
-Cohesion: 0.33
-Nodes (5): collection, compilerOptions, deleteOutDir, $schema, sourceRoot
-
-### Community 49 - "Community 49"
-Cohesion: 0.39
-Nodes (6): getToken(), isAuthenticated(), removeToken(), setToken(), AuthState, User
-
-### Community 50 - "Community 50"
-Cohesion: 0.33
-Nodes (5): int, str, generate_preview(), 太空猎人 - 预览图生成器 将天文图像转换为可预览的缩略图, # TODO: 实现预览图生成逻辑
-
-### Community 51 - "Community 51"
-Cohesion: 0.33
-Nodes (4): str, Processor, 太空猎人 - 图像处理 Worker 负责从队列获取任务并调度对应的解析器, # TODO: 实现任务调度逻辑
-
-### Community 53 - "Community 53"
-Cohesion: 0.40
-Nodes (4): str, parse_fits(), 太空猎人 - FITS 文件解析器 解析 FITS 天文图像文件的元数据和数据, # TODO: 使用 astropy.io.fits 解析 FITS 文件
-
-### Community 54 - "Community 54"
-Cohesion: 0.40
-Nodes (4): str, parse_raw(), 太空猎人 - RAW 文件解析器 解析相机 RAW 格式天文图像, # TODO: 使用 rawpy 解析 RAW 文件
-
-### Community 55 - "Community 55"
-Cohesion: 0.40
-Nodes (4): str, parse_tiff(), 太空猎人 - TIFF 文件解析器 解析 TIFF 天文图像文件, # TODO: 使用 tifffile 解析 TIFF 文件
-
-### Community 56 - "Community 56"
-Cohesion: 0.27
-Nodes (4): AuthModule, RedisModule, JwtStrategy, UsersModule
-
-### Community 57 - "Community 57"
-Cohesion: 0.40
-Nodes (4): description, name, private, version
-
-### Community 69 - "Community 69"
+### Community 50 - "Miniapp Points"
 Cohesion: 0.17
 Nodes (11): env, es2022, node, parserOptions, ecmaVersion, sourceType, root, rules (+3 more)
 
-### Community 96 - "Community 96"
-Cohesion: 0.20
-Nodes (7): PaginatedResult, commentRepo, createdPost, dto, fitsAssetRepo, mockPost, query
+### Community 51 - "Miniapp Events"
+Cohesion: 0.25
+Nodes (3): QueryTransactionsDto, RedeemDto, PointsController
 
-### Community 108 - "Community 108"
+### Community 53 - "Miniapp Login"
+Cohesion: 0.20
+Nodes (10): scripts, build, lint, start, start:debug, start:dev, start:prod, test (+2 more)
+
+### Community 54 - "Miniapp Post-detail"
+Cohesion: 0.36
+Nodes (3): AppController, AppService, result
+
+### Community 55 - "Miniapp Profile"
+Cohesion: 0.22
+Nodes (9): jest, collectCoverageFrom, coverageDirectory, moduleFileExtensions, rootDir, testEnvironment, testRegex, transform (+1 more)
+
+### Community 56 - "Miniapp Config Files"
+Cohesion: 0.25
+Nodes (6): AppDataSource, mockComments, mockGallery, MockPost, mockPosts, mockUsers
+
+### Community 57 - "Miniapp Services"
+Cohesion: 0.25
+Nodes (7): IApiResponse, ImageFormat, IPaginatedResponse, IPaginationParams, IUser, ProcessingStatus, UserRole
+
+### Community 58 - "Miniapp Auth Store"
+Cohesion: 0.39
+Nodes (6): getToken(), isAuthenticated(), removeToken(), setToken(), AuthState, User
+
+### Community 60 - "Miniapp App Config"
 Cohesion: 0.29
+Nodes (4): DEFAULT_CONFIG, RateLimitConfig, RateLimitMiddleware, ROUTE_CONFIGS
+
+### Community 61 - "SMS Verification API"
+Cohesion: 0.29
+Nodes (6): moduleFileExtensions, rootDir, testEnvironment, testRegex, transform, ^.+\\.(t|j)s$
+
+### Community 62 - "FITS Technical Design"
+Cohesion: 0.29
+Nodes (6): compilerOptions, outDir, rootDir, exclude, extends, include
+
+### Community 63 - "Deployment Plan"
+Cohesion: 0.33
+Nodes (5): edges, hyperedges, input_tokens, nodes, output_tokens
+
+### Community 64 - "Devices Spec"
+Cohesion: 0.33
 Nodes (5): mockConfigService, mockJwtService, mockRedisService, mockUser, mockUsersService
 
-### Community 109 - "Community 109"
+### Community 66 - "Web Volc Test"
 Cohesion: 0.33
-Nodes (5): ASTRO_ALLOWED_FORMATS, ASTRO_ALLOWED_MIMES, IMAGE_ALLOWED_FORMATS, IMAGE_ALLOWED_MIMES, MAGIC_NUMBERS
+Nodes (4): AppDataSource, commentTemplates, NewPost, newPosts
+
+### Community 67 - "Fits Compare Viewer"
+Cohesion: 0.33
+Nodes (5): collection, compilerOptions, deleteOutDir, $schema, sourceRoot
+
+### Community 68 - "Starfield Effect"
+Cohesion: 0.70
+Nodes (4): str, main(), query_tap(), write_csv()
+
+### Community 70 - "Locale Initializer"
+Cohesion: 0.40
+Nodes (4): description, name, private, version
+
+### Community 75 - "Post Detail Page"
+Cohesion: 0.50
+Nodes (3): int, str, generate_preview()
 
 ## Knowledge Gaps
-- **393 isolated node(s):** `code:block1 (packages/)`, `环境要求`, `code:bash (# 安装所有依赖)`, `code:bash (# 后端开发（热重载）)`, `code:bash (# 后端单元测试)` (+388 more)
+- **433 isolated node(s):** `root`, `node`, `es2022`, `ecmaVersion`, `sourceType` (+428 more)
   These have ≤1 connection - possible missing edges or undocumented components.
-- **34 thin communities (<3 nodes) omitted from report** — run `graphify query` to explore isolated nodes.
+- **30 thin communities (<3 nodes) omitted from report** — run `graphify query` to explore isolated nodes.
 
 ## Suggested Questions
 _Questions this graph is uniquely positioned to answer:_
 
-- **Why does `User` connect `Community 21` to `Community 96`, `Community 2`, `Community 36`, `Community 5`, `Community 8`, `Community 11`, `Community 107`, `Community 14`, `Community 56`, `Community 29`?**
-  _High betweenness centrality (0.014) - this node is a cross-community bridge._
-- **Why does `RedisService` connect `Community 28` to `Community 5`, `Community 108`, `Community 109`, `Community 14`, `Community 52`, `Community 21`, `Community 56`?**
-  _High betweenness centrality (0.012) - this node is a cross-community bridge._
-- **Why does `Post` connect `Community 21` to `Community 96`, `Community 2`, `Community 36`, `Community 5`, `Community 12`, `Community 14`, `Community 17`?**
-  _High betweenness centrality (0.010) - this node is a cross-community bridge._
-- **What connects `code:block1 (packages/)`, `环境要求`, `code:bash (# 安装所有依赖)` to the rest of the system?**
-  _404 weakly-connected nodes found - possible documentation gaps or missing edges._
-- **Should `Community 1` be split into smaller, more focused modules?**
-  _Cohesion score 0.06972789115646258 - nodes in this community are weakly interconnected._
-- **Should `Community 2` be split into smaller, more focused modules?**
-  _Cohesion score 0.06284153005464481 - nodes in this community are weakly interconnected._
-- **Should `Community 3` be split into smaller, more focused modules?**
-  _Cohesion score 0.1349206349206349 - nodes in this community are weakly interconnected._
+- **Why does `RedisService` connect `Posts & Comments Module` to `Devices Spec`, `Root ESLint`, `Web Config`, `FITS Worker Processing`, `Root Config`, `Server Config & Module`, `Miniapp App Config`?**
+  _High betweenness centrality (0.021) - this node is a cross-community bridge._
+- **Why does `User` connect `Follows Module` to `Admin Backend (NestJS)`, `Sections Module`, `Posts & Comments Module`, `Root Package`, `Dockerfile Config`, `FITS Worker Processing`, `Users Module`, `Server Config & Module`, `Web i18n`?**
+  _High betweenness centrality (0.020) - this node is a cross-community bridge._
+- **Why does `AdminController` connect `Admin Backend (NestJS)` to `Root Package`, `Follows Module`, `Redis Module`?**
+  _High betweenness centrality (0.019) - this node is a cross-community bridge._
+- **What connects `root`, `node`, `es2022` to the rest of the system?**
+  _433 weakly-connected nodes found - possible documentation gaps or missing edges._
+- **Should `Admin Management & Types` be split into smaller, more focused modules?**
+  _Cohesion score 0.07080200501253132 - nodes in this community are weakly interconnected._
+- **Should `FITS Astrometry Processing` be split into smaller, more focused modules?**
+  _Cohesion score 0.06233766233766234 - nodes in this community are weakly interconnected._
+- **Should `Project Architecture & Documentation` be split into smaller, more focused modules?**
+  _Cohesion score 0.0563265306122449 - nodes in this community are weakly interconnected._
