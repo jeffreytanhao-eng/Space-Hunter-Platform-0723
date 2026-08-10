@@ -24,6 +24,21 @@ import { CurrentUser } from '../../common/decorators/current-user.decorator';
 export class PointsController {
   constructor(private readonly pointsService: PointsService) {}
 
+  @Post('checkin')
+  @ApiOperation({ summary: '每日签到（+5 积分）' })
+  async checkin(
+    @CurrentUser('id') userId: string,
+    @Query('date') date?: string,
+  ) {
+    return this.pointsService.checkin(userId, date || '');
+  }
+
+  @Get('checkin/status')
+  @ApiOperation({ summary: '签到状态（是否今日已签、连续天数、总天数）' })
+  async getCheckinStatus(@CurrentUser('id') userId: string) {
+    return this.pointsService.getCheckinStatus(userId);
+  }
+
   @Get('balance')
   @ApiOperation({ summary: '查询当前用户积分余额' })
   async getBalance(@CurrentUser('id') userId: string) {

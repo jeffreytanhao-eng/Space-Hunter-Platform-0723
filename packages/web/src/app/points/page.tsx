@@ -1,8 +1,8 @@
-﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿'use client'
+﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿'use client'
 
 import { useState } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { getBalance, getTransactions, getRewards, redeem } from '@/services/points'
+import { getBalance, getTransactions, getRewards, redeem, getCheckinStatus, checkin } from '@/services/points'
 import { Header } from '@/components/layout/header'
 import { Footer } from '@/components/layout/footer'
 import { Card } from '@/components/ui/card'
@@ -14,7 +14,7 @@ import { format } from 'date-fns'
 import { useTranslation } from '@/lib/i18n'
 import {
   Coins, TrendingUp, TrendingDown, Gift,
-  ChevronLeft, ChevronRight, Loader2, Sparkles
+  ChevronLeft, ChevronRight, Loader2, Sparkles, CalendarCheck, Flame
 } from 'lucide-react'
 
 /* 积分中心页 */
@@ -32,6 +32,23 @@ export default function PointsPage() {
     queryKey: ['points-balance'],
     queryFn: getBalance,
     enabled: isAuthenticated,
+  })
+
+  /* 每日签到状态 */
+  const { data: checkinStatus, isLoading: checkinLoading } = useQuery({
+    queryKey: ['points-checkin-status'],
+    queryFn: getCheckinStatus,
+    enabled: isAuthenticated,
+  })
+
+  /* 每日签到 */
+  const checkinMutation = useMutation({
+    mutationFn: checkin,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['points-checkin-status'] })
+      queryClient.invalidateQueries({ queryKey: ['points-balance'] })
+      queryClient.invalidateQueries({ queryKey: ['points-transactions'] })
+    },
   })
 
   /* 积分明细 */
@@ -128,6 +145,47 @@ export default function PointsPage() {
               </p>
             )}
             <p className="mt-2 text-sm text-star-dim">{t('points.balanceHint')}</p>
+          </div>
+        </Card>
+
+        {/* 每日签到 */}
+        <Card glowColor="cyan" className="mb-6">
+          <div className="flex flex-col items-center gap-4 sm:flex-row sm:justify-between sm:gap-6">
+            <div className="flex items-center gap-4">
+              <div className={`flex h-14 w-14 shrink-0 items-center justify-center rounded-full ${checkinStatus?.checkedToday ? 'bg-neon-cyan/20' : 'bg-space-700'}`}>
+                {checkinStatus?.checkedToday
+                  ? <CalendarCheck className="h-7 w-7 text-neon-cyan" />
+                  : <Flame className="h-7 w-7 text-star-dim" />}
+              </div>
+              <div>
+                <h3 className="text-base font-medium text-star-white">{t('points.checkin')}</h3>
+                <p className="mt-1 text-sm text-star-dim">
+                  {t('points.checkinStreak', { streak: checkinStatus?.streak ?? 0 })}
+                  {checkinStatus && checkinStatus.total > 0 && ` · ${t('points.checkinTotal', { total: checkinStatus.total })}`}
+                </p>
+              </div>
+            </div>
+            {checkinLoading ? (
+              <Skeleton className="h-10 w-28" />
+            ) : checkinStatus?.checkedToday ? (
+              <Button variant="secondary" disabled>
+                <CalendarCheck className="mr-1 h-4 w-4" />
+                {t('points.checkinDone')}
+              </Button>
+            ) : (
+              <Button
+                variant="primary"
+                disabled={checkinMutation.isPending}
+                onClick={() => checkinMutation.mutate()}
+              >
+                {checkinMutation.isPending ? (
+                  <Loader2 className="mr-1 h-4 w-4 animate-spin" />
+                ) : (
+                  <CalendarCheck className="mr-1 h-4 w-4" />
+                )}
+                {t('points.checkinNow')}
+              </Button>
+            )}
           </div>
         </Card>
 

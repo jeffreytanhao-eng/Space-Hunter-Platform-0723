@@ -1,11 +1,23 @@
 import apiClient from '@/lib/api'
-import type { PointTransaction, PaginatedResponse, TransactionQuery, Reward } from '@/types'
+import type { PointTransaction, PaginatedResponse, TransactionQuery, Reward, CheckinStatus } from '@/types'
 
 /* 积分相关 API */
 
 /** 获取积分余额 */
 export async function getBalance() {
   const { data } = await apiClient.get<{ balance: number }>('/points/balance')
+  return data
+}
+
+/** 每日签到状态 */
+export async function getCheckinStatus() {
+  const { data } = await apiClient.get<CheckinStatus>('/points/checkin/status')
+  return data
+}
+
+/** 每日签到 */
+export async function checkin() {
+  const { data } = await apiClient.post<{ checked: boolean; points: number; streak: number; total: number }>('/points/checkin')
   return data
 }
 

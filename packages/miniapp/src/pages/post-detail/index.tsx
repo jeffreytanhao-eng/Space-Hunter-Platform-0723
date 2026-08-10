@@ -1,8 +1,9 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { View, Text, Image, Input, ScrollView } from '@tarojs/components'
 import Taro, { useRouter } from '@tarojs/taro'
-import { postsApi } from '@/services/api'
+import { postsApi, followsApi, favoritesApi, messagesApi } from '@/services/api'
 import type { PostDetail as PostDetailType, CommentItem } from '@/services/api'
+import { isLoggedIn } from '@/stores/auth'
 import './index.scss'
 
 /** 帖子详情页 */
@@ -11,6 +12,8 @@ export default function PostDetail() {
   const [post, setPost] = useState<PostDetailType | null>(null)
   const [commentText, setCommentText] = useState('')
   const [loading, setLoading] = useState(true)
+  const [isFollowing, setIsFollowing] = useState(false)
+  const [favoriting, setFavoriting] = useState(false)
 
   /** 加载帖子详情 */
   const loadPost = async () => {
@@ -32,12 +35,83 @@ export default function PostDetail() {
     loadPost()
   }
 
+  // 帖子加载后查询关注状态
+  useEffect(() => {
+    if (!post?.author?.id || !isLoggedIn()) return
+    followsApi.getFollowStatus(post.author.id)
+      .then(res => setIsFollowing(res.following))
+      .catch(() => {})
+  }, [post?.author?.id])
+
+  /** 关注/取消关注作者 */
+  const handleFollowAuthor = async () => {
+    if (!post?.author?.id) return
+    if (!isLoggedIn()) {
+      Taro.navigateTo({ url: '/pages/login/index' })
+      return
+    }
+    try {
+      if (isFollowing) {
+        await followsApi.unfollowUser(post.author.id)
+        setIsFollowing(false)
+        Taro.showToast({ title: '已取消关注', icon: 'none' })
+      } else {
+        await followsApi.followUser(post.author.id)
+        setIsFollowing(true)
+        Taro.showToast({ title: '关注成功', icon: 'success' })
+      }
+    } catch {
+      // 错误已在 request 层处理
+    }
+  }
+
   /** 点赞 */
   const handleLike = async () => {
     if (!post) return
     try {
       await postsApi.likePost(post.id)
       setPost(prev => prev ? { ...prev, isLiked: !prev.isLiked, likeCount: prev.isLiked ? prev.likeCount - 1 : prev.likeCount + 1 } : prev)
+    } catch {
+      // 错误已在 request 层处理
+    }
+  }
+
+  /** 收藏/取消收藏 */
+  const handleFavorite = async () => {
+    if (!post) return
+    if (!isLoggedIn()) {
+      Taro.navigateTo({ url: '/pages/login/index' })
+      return
+    }
+    if (favoriting) return
+    setFavoriting(true)
+    try {
+      const isFav = !!post.isFavorited
+      if (isFav) {
+        await favoritesApi.remove('post', post.id)
+        Taro.showToast({ title: '已取消收藏', icon: 'none' })
+      } else {
+        await favoritesApi.add({ targetType: 'post', targetId: post.id })
+        Taro.showToast({ title: '收藏成功', icon: 'success' })
+      }
+      setPost(prev => prev ? { ...prev, isFavorited: !isFav, favoriteCount: (prev.favoriteCount || 0) + (isFav ? -1 : 1) } : prev)
+    } catch {
+      // 错误已在 request 层处理
+    } finally {
+      setFavoriting(false)
+    }
+  }
+
+  /** 私信作者 */
+  const handleMessageAuthor = async () => {
+    if (!post?.author?.id) return
+    if (!isLoggedIn()) {
+      Taro.navigateTo({ url: '/pages/login/index' })
+      return
+    }
+    try {
+      const conv = await messagesApi.createConversation(post.author.id)
+      Taro.navigateTo({ url: `/pages/messages/chat?id=${conv.id}` })
     } catch {
       // 错误已在 request 层处理
     }
@@ -98,6 +172,15 @@ export default function PostDetail() {
               </Text>
               <Text className='post-detail__time'>{formatTime(post.createdAt)}</Text>
             </View>
+            <View
+              className={`post-detail__follow-btn ${isFollowing ? 'post-detail__follow-btn--following' : ''}`}
+              onClick={handleFollowAuthor}
+            >
+              <Text className='post-detail__follow-btn-text'>{isFollowing ? '已关注' : '关注'}</Text>
+            </View>
+            <View className='post-detail__msg-btn' onClick={handleMessageAuthor}>
+              <Text className='post-detail__msg-btn-text'>私信</Text>
+            </View>
           </View>
           <Text className='post-detail__category'>{post.category}</Text>
         </View>
@@ -134,6 +217,12 @@ export default function PostDetail() {
           <View className='post-detail__action'>
             <Text className='post-detail__action-icon'>💬</Text>
             <Text className='post-detail__action-text'>{post.commentCount}</Text>
+          </View>
+          <View className='post-detail__action' onClick={handleFavorite}>
+            <Text className={`post-detail__action-icon ${post.isFavorited ? 'post-detail__action-icon--favorited' : ''}`}>
+              {post.isFavorited ? '⭐' : '☆'}
+            </Text>
+            <Text className='post-detail__action-text'>{post.favoriteCount || 0}</Text>
           </View>
         </View>
 

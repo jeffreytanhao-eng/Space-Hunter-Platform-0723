@@ -23,7 +23,11 @@ interface BackendGalleryPhoto {
     nickname: string
     avatar: string | null
   }
+  isFavorited?: boolean
+  favoriteCount?: number
 }
+
+export type { BackendGalleryPhoto }
 
 interface BackendPaginated<T> {
   data: T[]
@@ -34,7 +38,7 @@ interface BackendPaginated<T> {
 }
 
 /* 转换后端画廊格式到前端格式 */
-function transformGalleryPhoto(bp: BackendGalleryPhoto): GalleryItem {
+export function transformGalleryPhoto(bp: BackendGalleryPhoto): GalleryItem {
   return {
     id: bp.id,
     title: bp.title,
@@ -48,6 +52,8 @@ function transformGalleryPhoto(bp: BackendGalleryPhoto): GalleryItem {
     category: bp.category,
     likesCount: bp.likeCount,
     isLiked: false,
+    isFavorited: bp.isFavorited,
+    favoriteCount: bp.favoriteCount,
     fitsMeta: bp.metadata ? bp.metadata : undefined,
     status: bp.status as 'pending' | 'approved' | 'rejected' | 'hidden',
     createdAt: bp.createdAt,

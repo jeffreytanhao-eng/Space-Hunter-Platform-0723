@@ -1,4 +1,4 @@
-﻿export { User } from './user.entity';
+export { User } from './user.entity';
 export { Post } from './post.entity';
 export { Comment } from './comment.entity';
 export { Follow } from './follow.entity';
@@ -11,3 +11,8 @@ export { AdminLog } from './admin-log.entity';
 export { FitsAsset } from './fits-asset.entity';
 export { DeviceUpload } from './device-upload.entity';
 export { DeviceProcessingTask } from './device-processing-task.entity';
+export { CheckIn } from './check-in.entity';
+export { Favorite } from '../../modules/favorites/favorite.entity';
+export { Conversation } from './conversation.entity';
+export { Message } from './message.entity';
+export { Notification } from './notification.entity';

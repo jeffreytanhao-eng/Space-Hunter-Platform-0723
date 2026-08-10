@@ -1,8 +1,9 @@
-﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿'use client'
+﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿'use client'
 
 import { useState } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { getGalleryList, applyGallery, downloadOriginal, toggleGalleryLike } from '@/services/gallery'
+import { addFavorite, removeFavorite } from '@/services/favorites'
 import apiClient from '@/lib/api'
 import { Header } from '@/components/layout/header'
 import { Footer } from '@/components/layout/footer'
@@ -18,7 +19,7 @@ import { useTranslation } from '@/lib/i18n'
 import {
   Search, Filter, ArrowUpDown, Heart, Download, X,
   ChevronLeft, ChevronRight, Maximize2, Info, Plus,
-  Loader2, Image as ImageIcon, Star, Eye, Upload
+  Loader2, Image as ImageIcon, Star, Eye, Upload, Bookmark
 } from 'lucide-react'
 
 /* 荣耀画廊页 */
@@ -84,7 +85,34 @@ export default function GalleryPage() {
       })
       return { prev }
     },
-    onError: (_e: string, _id: string, ctx: any) => {
+    onError: (_e: string, _vars: string, ctx: any) => {
+      if (ctx?.prev) {
+        queryClient.setQueryData(['gallery', page, category, sort, keyword], ctx.prev)
+      }
+    },
+  })
+
+  /* 画廊收藏（乐观更新） */
+  const favoriteMutation = useMutation({
+    mutationFn: ({ id, favorited }: { id: string; favorited: boolean }) =>
+      favorited ? removeFavorite('gallery', id) : addFavorite('gallery', id),
+    onMutate: async ({ id }: { id: string; favorited: boolean }) => {
+      const queryKey = ['gallery', page, category, sort, keyword]
+      const prev = queryClient.getQueryData(queryKey)
+      queryClient.setQueryData(queryKey, (old: any) => {
+        if (!old) return old
+        return {
+          ...old,
+          items: (old.items || []).map((it: any) =>
+            it.id === id
+              ? { ...it, isFavorited: !it.isFavorited, favoriteCount: (it.favoriteCount ?? 0) + (it.isFavorited ? -1 : 1) }
+              : it
+          ),
+        }
+      })
+      return { prev }
+    },
+    onError: (_e: string, _vars: { id: string; favorited: boolean }, ctx: any) => {
       if (ctx?.prev) {
         queryClient.setQueryData(['gallery', page, category, sort, keyword], ctx.prev)
       }
@@ -282,6 +310,13 @@ export default function GalleryPage() {
                           <Heart className={`h-3 w-3 ${item.isLiked ? 'fill-current' : ''}`} />
                           {item.likesCount}
                         </button>
+                        <button
+                          onClick={(e) => { e.stopPropagation(); isAuthenticated && favoriteMutation.mutate({ id: item.id, favorited: !!item.isFavorited }) }}
+                          className={`flex items-center gap-1 rounded px-1 py-0.5 transition-colors ${item.isFavorited ? 'text-neon-cyan' : 'hover:text-neon-cyan'} ${!isAuthenticated ? 'cursor-not-allowed opacity-60' : 'cursor-pointer'}`}
+                        >
+                          <Bookmark className={`h-3 w-3 ${item.isFavorited ? 'fill-current' : ''}`} />
+                          {item.favoriteCount ?? 0}
+                        </button>
                       </div>
                     </div>
                   </div>
@@ -406,6 +441,13 @@ export default function GalleryPage() {
                 >
                   <Heart className={`h-4 w-4 ${items[lightboxIndex].isLiked ? 'fill-current' : ''}`} />
                   {items[lightboxIndex].likesCount}
+                </button>
+                <button
+                  onClick={() => isAuthenticated && favoriteMutation.mutate({ id: items[lightboxIndex].id, favorited: !!items[lightboxIndex].isFavorited })}
+                  className={`flex items-center gap-1 rounded px-2 py-1 transition-colors ${items[lightboxIndex].isFavorited ? 'text-neon-cyan' : 'hover:text-neon-cyan'} ${!isAuthenticated ? 'cursor-not-allowed opacity-60' : 'cursor-pointer'}`}
+                >
+                  <Bookmark className={`h-4 w-4 ${items[lightboxIndex].isFavorited ? 'fill-current' : ''}`} />
+                  {items[lightboxIndex].favoriteCount ?? 0}
                 </button>
                 <Badge variant="cyan">{categories.find(c => c.value === items[lightboxIndex].category)?.label || items[lightboxIndex].category}</Badge>
               </div>

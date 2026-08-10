@@ -5,6 +5,7 @@ import Link from 'next/link'
 import { useAuthStore } from '@/stores/auth-store'
 import { Avatar } from '@/components/ui/avatar'
 import { LanguageSwitcher } from '@/components/ui/language-switcher'
+import { NotificationBell } from '@/components/layout/notification-bell'
 import { useTranslation } from '@/lib/i18n'
 import { Search, ChevronDown, LogOut, User, Coins, Menu, X, Shield } from 'lucide-react'
 
@@ -72,7 +73,9 @@ export function Header() {
           <LanguageSwitcher />
 
           {isAuthenticated && user ? (
-            <div className="relative" ref={dropdownRef}>
+            <>
+              <NotificationBell />
+              <div className="relative" ref={dropdownRef}>
               <button
                 onClick={() => setShowDropdown(!showDropdown)}
                 className="flex items-center gap-2 rounded-lg px-2 py-1 hover:bg-space-700 transition-colors"
@@ -126,7 +129,8 @@ export function Header() {
                   </button>
                 </div>
               )}
-            </div>
+              </div>
+            </>
           ) : (
             <div className="flex items-center gap-2">
               <Link

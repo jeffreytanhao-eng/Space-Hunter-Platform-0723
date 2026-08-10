@@ -25,7 +25,11 @@ interface BackendPost {
     id: string
     name: string
   }
+  isFavorited?: boolean
+  favoriteCount?: number
 }
+
+export type { BackendPost }
 
 interface BackendPaginated<T> {
   data: T[]
@@ -36,7 +40,7 @@ interface BackendPaginated<T> {
 }
 
 /* 转换后端帖子格式到前端格式 */
-function transformPost(bp: BackendPost): Post {
+export function transformPost(bp: BackendPost): Post {
   const tags = Array.isArray(bp.tags) ? bp.tags : []
   const images = Array.isArray(bp.images) ? bp.images : []
   return {
@@ -59,6 +63,8 @@ function transformPost(bp: BackendPost): Post {
     })),
     likesCount: bp.likeCount,
     commentsCount: bp.commentCount,
+    isFavorited: bp.isFavorited,
+    favoriteCount: bp.favoriteCount,
     createdAt: bp.createdAt,
     updatedAt: bp.updatedAt,
   }

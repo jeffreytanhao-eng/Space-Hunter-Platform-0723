@@ -201,6 +201,11 @@ export const en = {
     remaining: "Remaining",
     notLoggedIn: "Please log in to view points",
     goToLogin: "Log In",
+    checkin: "Daily Check-in",
+    checkinStreak: "Checked in {streak} days in a row",
+    checkinTotal: "Total check-ins: {total}",
+    checkinDone: "Checked in today",
+    checkinNow: "Check In Now",
   },
   events: {
     title: "Events",
@@ -363,8 +368,40 @@ export const en = {
   footer: {
     about: "About",
     privacy: "Privacy",
-    help: "Help",
     copyright: "Space Hunter — Astronomy Community",
+  },
+  legal: {
+    about: {
+      title: "About Space Hunter",
+      intro: "Space Hunter is an open community platform for astronomy enthusiasts. We believe everyone has a dream of looking up at the stars. Here you can record observation notes, share astrophotography, join events, and connect with fellow stargazers from all over the world.",
+      missionTitle: "Our Mission",
+      mission: "To make astronomical observation simple, fun, and shareable. We are committed to building an open, friendly platform that helps every astronomy enthusiast discover, document, and share the beauty of the universe.",
+      featuresTitle: "Platform Features",
+      features: [
+        "Starry Gallery: upload and share your astrophotography",
+        "Observation Logs: record when, where, and what you observed",
+        "Community Events: join online and offline stargazing events",
+        "Points System: earn points through check-ins, posts, and favorites, then redeem rewards",
+        "Messages & Notifications: connect with fellow stargazers in real time",
+      ],
+      contactTitle: "Contact Us",
+      contact: "If you have any suggestions or questions, feel free to reach out through community comments or private messages. We will reply as soon as possible.",
+    },
+    privacy: {
+      title: "Privacy Policy",
+      updated: "Last updated: August 2026",
+      intro: "This privacy policy explains how Space Hunter collects, uses, stores, and protects your personal information. By using this platform you agree to this policy.",
+      sections: [
+        { title: "Information We Collect", content: "Includes account information you provide at registration, as well as data generated during posting, commenting, image uploads, check-ins, and other usage." },
+        { title: "How We Use Information", content: "We use this information to provide and improve platform features, maintain community order, show you relevant content, and secure your account." },
+        { title: "Data Storage", content: "Your data is stored on protected servers. We take reasonable technical and administrative measures to safeguard your information." },
+        { title: "Cookies", content: "We use cookies to keep you signed in and remember your preferences for a better experience." },
+        { title: "Third-Party Services", content: "The platform may use third-party services (such as image storage or map services), which have their own privacy policies." },
+        { title: "Your Rights", content: "You may view, modify, or delete your personal information at any time, or contact us with related requests." },
+        { title: "Policy Updates", content: "We may update this policy from time to time. Significant changes will be notified through the platform." },
+      ],
+      contact: "If you have any privacy concerns, please contact us.",
+    },
   },
   sidebar: {
     sectionNav: "Sections",

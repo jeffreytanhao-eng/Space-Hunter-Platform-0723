@@ -14,6 +14,7 @@ import { PointsService } from '../points/points.service';
 import { CosService } from '../upload/cos.service';
 import { RedisService } from '../redis/redis.service';
 import { ModerationService } from '../../common/moderation/moderation.service';
+import { Favorite } from '../favorites/favorite.entity';
 import { ApplyGalleryDto } from './dto/apply-gallery.dto';
 import { ReviewGalleryDto } from './dto/review-gallery.dto';
 import { QueryGalleryDto } from './dto/query-gallery.dto';
@@ -38,6 +39,8 @@ export class GalleryService {
     private readonly adminLogRepo: Repository<AdminLog>,
     @InjectRepository(FitsAsset)
     private readonly fitsAssetRepo: Repository<FitsAsset>,
+    @InjectRepository(Favorite)
+    private readonly favoriteRepo: Repository<Favorite>,
     private readonly pointsService: PointsService,
     private readonly cosService: CosService,
     private readonly redisService: RedisService,
@@ -98,7 +101,10 @@ export class GalleryService {
   }
 
   /** 画廊详情（含 FITS 元数据 + 原始文件下载链接） */
-  async findById(id: string): Promise<GalleryPhoto & { downloadUrl?: string }> {
+  async findById(
+    id: string,
+    userId?: string,
+  ): Promise<GalleryPhoto & { downloadUrl?: string; isFavorited?: boolean; favoriteCount?: number }> {
     const photo = await this.galleryRepo.findOne({
       where: { id },
       relations: ['user'],
@@ -131,7 +137,23 @@ export class GalleryService {
       }
     }
 
-    return { ...photo, metadata: fitsMetadata, downloadUrl };
+    return {
+      ...photo,
+      metadata: fitsMetadata,
+      downloadUrl,
+      isFavorited: userId ? await this.isFavorited(userId, id) : false,
+      favoriteCount: await this.favoriteRepo.count({
+        where: { targetType: 'gallery', targetId: id },
+      }),
+    };
+  }
+
+  /** 查询当前用户是否已收藏该画廊作品 */
+  private async isFavorited(userId: string, targetId: string): Promise<boolean> {
+    const fav = await this.favoriteRepo.findOne({
+      where: { userId, targetType: 'gallery', targetId },
+    });
+    return !!fav;
   }
 
   /** 申请进入画廊（ADR-004: 人工终审） */

@@ -77,6 +77,43 @@
     margin-top: 4px;
   }
 
+  &__follow-btn {
+    margin-left: 20px;
+    padding: 8px 24px;
+    border-radius: 28px;
+    background: linear-gradient(135deg, var(--color-accent), var(--color-accent-hover));
+    flex-shrink: 0;
+
+    &--following {
+      background: transparent;
+      border: 1px solid var(--color-border-active);
+    }
+  }
+
+  &__follow-btn-text {
+    font-size: 24px;
+    color: #fff;
+    font-weight: 500;
+  }
+
+  &__follow-btn--following &__follow-btn-text {
+    color: var(--color-accent);
+  }
+
+  &__msg-btn {
+    margin-left: 16px;
+    padding: 8px 24px;
+    border-radius: 28px;
+    border: 1px solid var(--color-border-active);
+    flex-shrink: 0;
+  }
+
+  &__msg-btn-text {
+    font-size: 24px;
+    color: var(--color-text-secondary);
+    font-weight: 500;
+  }
+
   &__category {
     font-size: 22px;
     color: var(--color-accent);
@@ -137,6 +174,10 @@
 
     &--liked {
       color: var(--color-error);
+    }
+
+    &--favorited {
+      color: var(--color-warning);
     }
   }
 

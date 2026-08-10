@@ -1,9 +1,13 @@
 import { defineConfig } from '@tarojs/cli'
+import path from 'path'
 
 export default defineConfig({
   projectName: 'space-hunter',
   date: '2026-7-23',
   designWidth: 750,
+  alias: {
+    '@': path.resolve(__dirname, '..', 'src'),
+  },
   deviceRatio: {
     640: 2.34 / 2,
     750: 1,

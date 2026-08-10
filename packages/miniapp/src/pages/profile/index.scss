@@ -188,6 +188,31 @@
     color: var(--color-text-muted);
   }
 
+  &__menu-label {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+  }
+
+  &__menu-badge {
+    min-width: 32px;
+    height: 32px;
+    padding: 0 8px;
+    border-radius: 16px;
+    background-color: var(--color-error);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-left: 12px;
+  }
+
+  &__menu-badge-text {
+    font-size: 20px;
+    color: #fff;
+    font-weight: 600;
+    line-height: 1;
+  }
+
   &__logout {
     display: flex;
     align-items: center;

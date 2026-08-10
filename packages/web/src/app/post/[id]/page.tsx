@@ -5,6 +5,7 @@ import { useParams, useRouter } from 'next/navigation'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { getPost, toggleLike, deletePost } from '@/services/posts'
 import { getComments, createComment, deleteComment } from '@/services/comments'
+import { addFavorite, removeFavorite } from '@/services/favorites'
 import { Header } from '@/components/layout/header'
 import { Footer } from '@/components/layout/footer'
 import { Card } from '@/components/ui/card'
@@ -16,7 +17,8 @@ import { useAuthStore } from '@/stores/auth-store'
 import { format } from 'date-fns'
 import {
   Heart, MessageCircle, Download, Trash2, Edit3,
-  ChevronLeft, ChevronRight, X, Send, Eye, Telescope, Clock, Filter
+  ChevronLeft, ChevronRight, X, Send, Eye, Telescope, Clock, Filter,
+  Bookmark, MessageSquare
 } from 'lucide-react'
 
 /* 帖子详情页 */
@@ -46,6 +48,14 @@ export default function PostDetailPage() {
   /* 点赞 */
   const likeMutation = useMutation({
     mutationFn: () => toggleLike(postId),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['post', postId] })
+    },
+  })
+
+  /* 收藏 */
+  const favoriteMutation = useMutation({
+    mutationFn: () => (post?.isFavorited ? removeFavorite('post', postId) : addFavorite('post', postId)),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['post', postId] })
     },
@@ -293,6 +303,29 @@ export default function PostDetailPage() {
               <Heart className={`h-4 w-4 ${post.isLiked ? 'fill-current' : ''}`} />
               {post.likesCount}
             </button>
+            {/* 收藏 */}
+            <button
+              onClick={() => isAuthenticated && favoriteMutation.mutate()}
+              disabled={favoriteMutation.isPending}
+              className={`flex items-center gap-2 rounded-lg px-4 py-2 text-sm transition-colors ${
+                post.isFavorited
+                  ? 'bg-neon-cyan/15 text-neon-cyan border border-neon-cyan/30'
+                  : 'bg-space-700 text-star-dim hover:text-star-white border border-space-600'
+              } ${!isAuthenticated ? 'cursor-not-allowed opacity-50' : ''}`}
+            >
+              <Bookmark className={`h-4 w-4 ${post.isFavorited ? 'fill-current' : ''}`} />
+              {post.favoriteCount ?? 0}
+            </button>
+            {/* 私信作者 */}
+            {isAuthenticated && user && user.id !== post.authorId && (
+              <button
+                onClick={() => router.push(`/messages?peerId=${post.authorId}`)}
+                className="flex items-center gap-2 rounded-lg px-4 py-2 text-sm transition-colors bg-space-700 text-star-dim hover:text-star-white border border-space-600"
+              >
+                <MessageSquare className="h-4 w-4" />
+                私信
+              </button>
+            )}
             <span className="flex items-center gap-2 text-sm text-star-dim">
               <MessageCircle className="h-4 w-4" />
               {post.commentsCount} 条评论

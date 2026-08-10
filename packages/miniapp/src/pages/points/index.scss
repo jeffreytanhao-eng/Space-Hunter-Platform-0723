@@ -77,6 +77,62 @@
     color: var(--color-text-muted);
   }
 
+  &__checkin-card {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+    margin-top: 24px;
+    padding: 32px 24px;
+    background-color: var(--color-bg-card);
+    border: 1px solid var(--color-border);
+    border-radius: 16px;
+  }
+
+  &__checkin-info {
+    flex: 1;
+    min-width: 0;
+  }
+
+  &__checkin-title {
+    display: block;
+    font-size: 30px;
+    font-weight: 600;
+    color: var(--color-text-primary);
+    margin-bottom: 6px;
+  }
+
+  &__checkin-desc {
+    font-size: 24px;
+    color: var(--color-text-muted);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  &__checkin-btn {
+    margin-left: 20px;
+    flex-shrink: 0;
+    padding: 12px 32px;
+    background: linear-gradient(135deg, var(--color-accent), var(--color-accent-hover));
+    border-radius: 32px;
+
+    &--done {
+      background: transparent;
+      border: 1px solid var(--color-border-active);
+    }
+  }
+
+  &__checkin-btn-text {
+    font-size: 26px;
+    color: #fff;
+    font-weight: 600;
+  }
+
+  &__checkin-btn--done &__checkin-btn-text {
+    color: var(--color-accent);
+  }
+
   &__list {
     flex: 1;
     padding: 20px 24px;

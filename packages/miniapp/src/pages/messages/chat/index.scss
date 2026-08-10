@@ -1,0 +1,100 @@
+.chat {
+  min-height: 100vh;
+  background-color: var(--color-bg-primary);
+  display: flex;
+  flex-direction: column;
+
+  &__list {
+    flex: 1;
+    padding: 20px 24px;
+    height: calc(100vh - 120px);
+  }
+
+  &__row {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    margin-bottom: 20px;
+
+    &--mine {
+      align-items: flex-end;
+    }
+  }
+
+  &__bubble {
+    max-width: 70%;
+    padding: 16px 24px;
+    border-radius: 16px;
+    background-color: var(--color-bg-card);
+    border: 1px solid var(--color-border);
+  }
+
+  &__row--mine &__bubble {
+    background: linear-gradient(135deg, var(--color-accent), var(--color-accent-hover));
+    border-color: transparent;
+  }
+
+  &__bubble-text {
+    font-size: 28px;
+    color: var(--color-text-primary);
+    line-height: 1.5;
+    word-break: break-word;
+  }
+
+  &__row--mine &__bubble-text {
+    color: #fff;
+  }
+
+  &__time {
+    font-size: 20px;
+    color: var(--color-text-muted);
+    margin-top: 6px;
+  }
+
+  &__empty,
+  &__loading {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 80px 0;
+  }
+
+  &__empty-text,
+  &__loading-text {
+    font-size: 26px;
+    color: var(--color-text-muted);
+  }
+
+  &__input-bar {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    padding: 16px 24px;
+    background-color: var(--color-bg-secondary);
+    border-top: 1px solid var(--color-border);
+  }
+
+  &__input {
+    flex: 1;
+    height: 72px;
+    padding: 0 20px;
+    background-color: var(--color-bg-card);
+    border: 1px solid var(--color-border);
+    border-radius: 12px;
+    font-size: 28px;
+    color: var(--color-text-primary);
+  }
+
+  &__send-btn {
+    margin-left: 16px;
+    padding: 16px 28px;
+    background: linear-gradient(135deg, var(--color-accent), var(--color-accent-hover));
+    border-radius: 12px;
+  }
+
+  &__send-btn-text {
+    font-size: 28px;
+    color: #fff;
+    font-weight: 600;
+  }
+}

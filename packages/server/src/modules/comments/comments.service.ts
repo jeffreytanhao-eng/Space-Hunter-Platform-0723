@@ -4,6 +4,7 @@ import { Repository } from 'typeorm';
 import { Comment } from '../../database/entities/comment.entity';
 import { Post } from '../../database/entities/post.entity';
 import { CreateCommentDto } from './dto/create-comment.dto';
+import { NotificationsService } from '../notifications/notifications.service';
 
 /** 分页结果 */
 export interface PaginatedResult<T> {
@@ -21,6 +22,7 @@ export class CommentsService {
     private readonly commentRepo: Repository<Comment>,
     @InjectRepository(Post)
     private readonly postRepo: Repository<Post>,
+    private readonly notificationsService: NotificationsService,
   ) {}
 
   /** 按时间排序的评论列表 */
@@ -64,6 +66,16 @@ export class CommentsService {
 
     // 更新评论计数
     await this.postRepo.increment({ id: postId }, 'commentCount', 1);
+
+    // 生成评论通知
+    await this.notificationsService.create({
+      userId: post.userId,
+      type: 'comment',
+      actorId: userId,
+      targetType: 'post',
+      targetId: postId,
+      content: '评论了你的帖子',
+    });
 
     return saved;
   }

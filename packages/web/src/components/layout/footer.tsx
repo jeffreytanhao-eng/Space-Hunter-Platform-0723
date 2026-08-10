@@ -12,9 +12,8 @@ export function Footer() {
         <div className="flex flex-col items-center justify-between gap-4 sm:flex-row">
           <span className="text-sm text-star-dim">{t('footer.copyright')}</span>
           <div className="flex gap-4 text-sm text-star-dim">
-            <a href="#" className="hover:text-star-white transition-colors">{t('footer.about')}</a>
-            <a href="#" className="hover:text-star-white transition-colors">{t('footer.privacy')}</a>
-            <a href="#" className="hover:text-star-white transition-colors">{t('footer.help')}</a>
+            <a href="/about" className="hover:text-star-white transition-colors">{t('footer.about')}</a>
+            <a href="/privacy" className="hover:text-star-white transition-colors">{t('footer.privacy')}</a>
           </div>
         </div>
         <div className="mt-4 flex flex-col items-center justify-center gap-2 border-t border-space-600 pt-4 text-xs text-star-dim sm:flex-row sm:gap-4">

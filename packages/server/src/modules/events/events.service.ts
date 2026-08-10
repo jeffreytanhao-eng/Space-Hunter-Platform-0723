@@ -178,7 +178,7 @@ export class EventsService {
         signupStatus: 'signed',
       });
 
-    qb.orderBy('e.start_time', 'DESC');
+    qb.orderBy('e.startTime', 'DESC');
 
     const skip = (page - 1) * pageSize;
     qb.skip(skip).take(pageSize);

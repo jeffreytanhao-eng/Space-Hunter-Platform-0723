@@ -10,12 +10,14 @@ import { Post } from '../../database/entities/post.entity';
 import { Comment } from '../../database/entities/comment.entity';
 import { FitsAsset } from '../../database/entities/fits-asset.entity';
 import { PointsTransaction } from '../../database/entities/points-transaction.entity';
+import { Favorite } from '../favorites/favorite.entity';
 import { User } from '../../database/entities/user.entity';
 import { Section } from '../../database/entities/section.entity';
 import { CreatePostDto } from './dto/create-post.dto';
 import { UpdatePostDto } from './dto/update-post.dto';
 import { QueryPostDto } from './dto/query-post.dto';
 import { ModerationService } from '../../common/moderation';
+import { NotificationsService } from '../notifications/notifications.service';
 
 /** 分页结果 */
 export interface PaginatedResult<T> {
@@ -37,7 +39,10 @@ export class PostsService {
     private readonly fitsAssetRepo: Repository<FitsAsset>,
     @InjectRepository(PointsTransaction)
     private readonly pointsTxRepo: Repository<PointsTransaction>,
+    @InjectRepository(Favorite)
+    private readonly favoriteRepo: Repository<Favorite>,
     private readonly moderationService: ModerationService,
+    private readonly notificationsService: NotificationsService,
   ) {}
 
   /** 分页查询帖子列表 */
@@ -118,7 +123,7 @@ export class PostsService {
   }
 
   /** 帖子详情，含作者信息和评论 */
-  async findById(id: string): Promise<Post> {
+  async findById(id: string, userId?: string): Promise<Post> {
     const post = await this.postRepo.findOne({ where: { id } });
     if (!post) {
       throw new NotFoundException('帖子不存在');
@@ -146,6 +151,14 @@ export class PostsService {
     (post as any).user = user || null;
     (post as any).section = section || null;
     (post as any).comments = comments;
+
+    // 当前用户是否已收藏（可选）
+    if (userId) {
+      const fav = await this.favoriteRepo.findOne({
+        where: { userId, targetType: 'post', targetId: id },
+      });
+      (post as any).isFavorited = !!fav;
+    }
 
     return post;
   }
@@ -316,6 +329,18 @@ export class PostsService {
 
     post.likeCount += 1;
     await this.postRepo.save(post);
+
+    // 点赞且点赞者非帖子作者时，生成站内通知
+    if (post.userId !== userId) {
+      await this.notificationsService.create({
+        userId: post.userId,
+        type: 'like',
+        actorId: userId,
+        targetType: 'post',
+        targetId: postId,
+        content: '赞了你的帖子',
+      });
+    }
 
     return { liked: true };
   }

@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { View, Text, Image, ScrollView } from '@tarojs/components'
 import Taro, { useDidShow } from '@tarojs/taro'
-import { usersApi, postsApi } from '@/services/api'
+import { usersApi, postsApi, notificationsApi } from '@/services/api'
 import { getUser, isLoggedIn, logout } from '@/stores/auth'
 import type { AuthUser, PostItem } from '@/services/api'
 import './index.scss'
@@ -11,6 +11,7 @@ export default function Profile() {
   const [user, setUser] = useState<AuthUser | null>(null)
   const [myPosts, setMyPosts] = useState<PostItem[]>([])
   const [_loading, setLoading] = useState(false)
+  const [unreadCount, setUnreadCount] = useState(0)
 
   /** 加载用户信息 */
   const loadUser = async () => {
@@ -38,6 +39,16 @@ export default function Profile() {
     }
   }
 
+  /** 加载未读通知数 */
+  const loadUnreadCount = async () => {
+    try {
+      const res = await notificationsApi.getUnreadCount()
+      setUnreadCount(res.count || 0)
+    } catch {
+      // 错误已在 request 层处理
+    }
+  }
+
   useDidShow(() => {
     if (!isLoggedIn()) {
       Taro.redirectTo({ url: '/pages/login/index' })
@@ -45,6 +56,7 @@ export default function Profile() {
     }
     loadUser()
     loadMyPosts()
+    loadUnreadCount()
   })
 
   /** 跳转编辑资料 */
@@ -55,6 +67,13 @@ export default function Profile() {
   /** 跳转帖子详情 */
   const handlePostTap = (id: string) => {
     Taro.navigateTo({ url: `/pages/post-detail/index?id=${id}` })
+  }
+
+  /** 打开关注/粉丝列表 */
+  const handleOpenFollow = (type: 'following' | 'followers') => {
+    const uid = user?.id
+    if (!uid) return
+    Taro.navigateTo({ url: `/pages/follow/index?userId=${uid}&type=${type}` })
   }
 
   /** 退出登录 */
@@ -101,11 +120,11 @@ export default function Profile() {
             <Text className='profile__stat-value'>{user?.postCount || 0}</Text>
             <Text className='profile__stat-label'>帖子</Text>
           </View>
-          <View className='profile__stat-item'>
+          <View className='profile__stat-item' onClick={() => handleOpenFollow('following')}>
             <Text className='profile__stat-value'>{user?.followCount || 0}</Text>
             <Text className='profile__stat-label'>关注</Text>
           </View>
-          <View className='profile__stat-item'>
+          <View className='profile__stat-item' onClick={() => handleOpenFollow('followers')}>
             <Text className='profile__stat-value'>{user?.followerCount || 0}</Text>
             <Text className='profile__stat-label'>粉丝</Text>
           </View>
@@ -141,6 +160,25 @@ export default function Profile() {
 
         {/* 功能入口 */}
         <View className='profile__section'>
+          <View className='profile__menu-item' onClick={() => Taro.navigateTo({ url: '/pages/favorites/index' })}>
+            <Text className='profile__menu-text'>我的收藏</Text>
+            <Text className='profile__menu-arrow'>›</Text>
+          </View>
+          <View className='profile__menu-item' onClick={() => Taro.navigateTo({ url: '/pages/notifications/index' })}>
+            <View className='profile__menu-label'>
+              <Text className='profile__menu-text'>消息通知</Text>
+              {unreadCount > 0 && (
+                <View className='profile__menu-badge'>
+                  <Text className='profile__menu-badge-text'>{unreadCount > 99 ? '99+' : unreadCount}</Text>
+                </View>
+              )}
+            </View>
+            <Text className='profile__menu-arrow'>›</Text>
+          </View>
+          <View className='profile__menu-item' onClick={() => Taro.navigateTo({ url: '/pages/messages/index' })}>
+            <Text className='profile__menu-text'>私信</Text>
+            <Text className='profile__menu-arrow'>›</Text>
+          </View>
           <View className='profile__menu-item' onClick={() => Taro.switchTab({ url: '/pages/points/index' })}>
             <Text className='profile__menu-text'>积分中心</Text>
             <Text className='profile__menu-arrow'>›</Text>

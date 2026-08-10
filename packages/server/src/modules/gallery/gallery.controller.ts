@@ -43,8 +43,11 @@ export class GalleryController {
   @Get(':id')
   @ApiOperation({ summary: '画廊详情（含 FITS 元数据 + 原始文件下载链接）' })
   @ApiParam({ name: 'id', description: '画廊照片 ID' })
-  async findById(@Param('id') id: string) {
-    return this.galleryService.findById(id);
+  async findById(
+    @Param('id') id: string,
+    @CurrentUser('id') userId?: string,
+  ) {
+    return this.galleryService.findById(id, userId);
   }
 
   @Post('apply')

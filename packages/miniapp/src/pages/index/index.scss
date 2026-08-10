@@ -64,4 +64,26 @@
     font-size: 24px;
     color: var(--color-text-muted);
   }
+
+  &__fab {
+    position: fixed;
+    right: 32px;
+    bottom: 64px;
+    width: 96px;
+    height: 96px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, var(--color-accent), var(--color-accent-hover));
+    box-shadow: 0 8px 24px var(--color-accent-glow);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 100;
+  }
+
+  &__fab-icon {
+    font-size: 56px;
+    color: #fff;
+    line-height: 1;
+    font-weight: 300;
+  }
 }

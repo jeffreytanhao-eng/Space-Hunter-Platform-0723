@@ -7,6 +7,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Follow } from '../../database/entities/follow.entity';
 import { User } from '../../database/entities/user.entity';
+import { NotificationsService } from '../notifications/notifications.service';
 
 /** 分页结果 */
 export interface PaginatedResult<T> {
@@ -24,6 +25,7 @@ export class FollowsService {
     private readonly followRepo: Repository<Follow>,
     @InjectRepository(User)
     private readonly userRepo: Repository<User>,
+    private readonly notificationsService: NotificationsService,
   ) {}
 
   /** 关注用户 */
@@ -51,7 +53,19 @@ export class FollowsService {
       followerId,
       followingId,
     });
-    return this.followRepo.save(follow);
+    const saved = await this.followRepo.save(follow);
+
+    // 生成关注通知
+    await this.notificationsService.create({
+      userId: followingId,
+      type: 'follow',
+      actorId: followerId,
+      targetType: 'user',
+      targetId: followerId,
+      content: '关注了你',
+    });
+
+    return saved;
   }
 
   /** 取消关注 */

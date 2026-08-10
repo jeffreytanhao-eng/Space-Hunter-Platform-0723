@@ -1,4 +1,4 @@
-﻿import { zh } from './zh'
+import { zh } from './zh'
 import { en } from './en'
 import { useLocaleStore } from '@/stores/locale-store'
 
@@ -43,5 +43,5 @@ export function useTranslation() {
 
   const localeText = locale === 'zh' ? 'zh' : 'en'
 
-  return { t, locale, localeText }
+  return { t, locale, localeText, dict }
 }

@@ -1,8 +1,8 @@
 import { useState } from 'react'
 import { View, Text, Image, ScrollView } from '@tarojs/components'
 import Taro, { useDidShow } from '@tarojs/taro'
-import { pointsApi } from '@/services/api'
-import type { TransactionItem, RewardItem } from '@/services/api'
+import { pointsApi, checkinApi } from '@/services/api'
+import type { TransactionItem, RewardItem, CheckinStatus } from '@/services/api'
 import './index.scss'
 
 /** 积分页签 */
@@ -19,12 +19,24 @@ export default function Points() {
   const [transactions, setTransactions] = useState<TransactionItem[]>([])
   const [rewards, setRewards] = useState<RewardItem[]>([])
   const [loading, setLoading] = useState(false)
+  const [checkin, setCheckin] = useState<CheckinStatus>({ checkedToday: false, streak: 0, total: 0 })
+  const [checking, setChecking] = useState(false)
 
   /** 加载积分余额 */
   const loadBalance = async () => {
     try {
       const res = await pointsApi.getBalance()
       setBalance(res.balance)
+    } catch {
+      // 错误已在 request 层处理
+    }
+  }
+
+  /** 加载签到状态 */
+  const loadCheckin = async () => {
+    try {
+      const res = await checkinApi.getStatus()
+      setCheckin(res)
     } catch {
       // 错误已在 request 层处理
     }
@@ -58,6 +70,7 @@ export default function Points() {
 
   useDidShow(() => {
     loadBalance()
+    loadCheckin()
     if (activeTab === 'transactions') loadTransactions()
     if (activeTab === 'rewards') loadRewards()
   })
@@ -65,9 +78,29 @@ export default function Points() {
   /** 切换页签 */
   const handleTabChange = (tab: string) => {
     setActiveTab(tab)
-    if (tab === 'balance') loadBalance()
+    if (tab === 'balance') {
+      loadBalance()
+      loadCheckin()
+    }
     if (tab === 'transactions') loadTransactions()
     if (tab === 'rewards') loadRewards()
+  }
+
+  /** 每日签到 */
+  const handleCheckin = async () => {
+    if (checking || checkin.checkedToday) return
+    setChecking(true)
+    try {
+      const res = await checkinApi.checkin()
+      Taro.showToast({ title: `签到成功，+${res.points} 积分`, icon: 'success' })
+      if (res.streak !== undefined) setCheckin(prev => ({ ...prev, checkedToday: true, streak: res.streak, total: res.total }))
+      loadBalance()
+    } catch {
+      // 错误已在 request 层处理
+      loadCheckin()
+    } finally {
+      setChecking(false)
+    }
   }
 
   /** 兑换奖品 */
@@ -114,6 +147,26 @@ export default function Points() {
             <Text className='points__balance-label'>当前积分</Text>
             <Text className='points__balance-value'>{balance}</Text>
             <Text className='points__balance-hint'>签到、发帖、评论均可获得积分</Text>
+          </View>
+
+          {/* 每日签到 */}
+          <View className='points__checkin-card'>
+            <View className='points__checkin-info'>
+              <Text className='points__checkin-title'>每日签到</Text>
+              <Text className='points__checkin-desc'>
+                {checkin.checkedToday
+                  ? `今日已签到 · 已连续 ${checkin.streak} 天`
+                  : `连续签到第 ${checkin.streak} 天，签到得积分`}
+              </Text>
+            </View>
+            <View
+              className={`points__checkin-btn ${checkin.checkedToday ? 'points__checkin-btn--done' : ''}`}
+              onClick={handleCheckin}
+            >
+              <Text className='points__checkin-btn-text'>
+                {checkin.checkedToday ? '已签到' : checking ? '签到中...' : '签到'}
+              </Text>
+            </View>
           </View>
         </View>
       )}

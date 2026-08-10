@@ -41,6 +41,8 @@ export interface Post {
   likesCount: number
   commentsCount: number
   isLiked?: boolean
+  isFavorited?: boolean
+  favoriteCount?: number
   status: string
   createdAt: string
   updatedAt: string
@@ -204,6 +206,8 @@ export interface GalleryItem {
   category: string
   likesCount: number
   isLiked?: boolean
+  isFavorited?: boolean
+  favoriteCount?: number
   fitsMeta?: FitsMeta
   status: 'pending' | 'approved' | 'rejected' | 'hidden'
   moderation?: {
@@ -380,4 +384,50 @@ export interface FollowFeedItem {
 export interface FollowFeedQuery {
   page?: number
   pageSize?: number
+}
+
+/** 每日签到状态 */
+export interface CheckinStatus {
+  checkedToday: boolean
+  streak: number
+  total: number
+}
+
+/** 收藏目标类型 */
+export type FavoriteTargetType = 'post' | 'gallery'
+
+/** 站内通知 */
+export interface NotificationItem {
+  id: string
+  type: string
+  title: string
+  content?: string
+  isRead: boolean
+  createdAt: string
+}
+
+/** 通知查询参数 */
+export interface NotificationQuery {
+  page?: number
+  pageSize?: number
+}
+
+/** 私信会话 */
+export interface Conversation {
+  id: string
+  peerId: string
+  peerNickname: string
+  peerAvatar?: string
+  lastMessage?: string
+  lastMessageAt?: string
+  unreadCount: number
+}
+
+/** 私信消息 */
+export interface Message {
+  id: string
+  conversationId: string
+  senderId: string
+  content: string
+  createdAt: string
 }

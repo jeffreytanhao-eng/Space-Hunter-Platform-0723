@@ -7,6 +7,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, DataSource } from 'typeorm';
 import { PointsTransaction } from '../../database/entities/points-transaction.entity';
 import { User } from '../../database/entities/user.entity';
+import { CheckIn } from '../../database/entities/check-in.entity';
 import { RedisService } from '../redis/redis.service';
 import { QueryTransactionsDto } from './dto/query-transactions.dto';
 import { RedeemDto } from './dto/redeem.dto';
@@ -28,6 +29,8 @@ export class PointsService {
     private readonly pointsTxRepo: Repository<PointsTransaction>,
     @InjectRepository(User)
     private readonly userRepo: Repository<User>,
+    @InjectRepository(CheckIn)
+    private readonly checkInRepo: Repository<CheckIn>,
     private readonly dataSource: DataSource,
     private readonly redisService: RedisService,
   ) {}
@@ -73,6 +76,101 @@ export class PointsService {
       pageSize,
       totalPages: Math.ceil(total / pageSize),
     };
+  }
+
+  /**
+   * 每日签到
+   * 今日已签到则报错；否则创建 CheckIn 记录并发放 +5 积分（幂等键 checkin:userId:date）
+   */
+  async checkin(userId: string, date: string): Promise<{ checked: boolean; points: number; streak: number; total: number }> {
+    const checkinDate = this.normalizeDate(date);
+
+    // 今日是否已签到
+    const existing = await this.checkInRepo.findOne({
+      where: { userId, checkinDate },
+    });
+    if (existing) {
+      throw new BadRequestException('今日已签到');
+    }
+
+    // 创建签到记录
+    const checkin = this.checkInRepo.create({ userId, checkinDate });
+    const saved = await this.checkInRepo.save(checkin);
+
+    // 发放签到积分（幂等）
+    await this.earnPoints(
+      userId,
+      5,
+      'checkin',
+      saved.id,
+      `checkin:${userId}:${checkinDate}`,
+      '每日签到奖励',
+    );
+
+    const total = await this.checkInRepo.count({ where: { userId } });
+    const streak = await this.computeStreak(userId, checkinDate);
+
+    return { checked: true, points: 5, streak, total };
+  }
+
+  /** 签到状态查询 */
+  async getCheckinStatus(userId: string): Promise<{ checkedToday: boolean; streak: number; total: number }> {
+    const today = this.toDateStr(new Date());
+    const checkedToday = !!(await this.checkInRepo.findOne({
+      where: { userId, checkinDate: today },
+    }));
+    const total = await this.checkInRepo.count({ where: { userId } });
+    const streak = await this.computeStreak(userId, today);
+    return { checkedToday, streak, total };
+  }
+
+  /** 计算连续签到天数（从 date 当天往前数） */
+  private async computeStreak(userId: string, date: string): Promise<number> {
+    const records = await this.checkInRepo.find({
+      where: { userId },
+      select: ['checkinDate'],
+    });
+    const dateSet = new Set(records.map((r) => r.checkinDate));
+
+    const today = this.normalizeDate(date);
+    // 今天已签到则从今天开始，否则从昨天开始（允许隔一天不丢连胜）
+    let cursor: string;
+    if (dateSet.has(today)) {
+      cursor = today;
+    } else {
+      const yesterday = this.offsetDate(today, -1);
+      if (!dateSet.has(yesterday)) return 0;
+      cursor = yesterday;
+    }
+
+    let streak = 0;
+    while (dateSet.has(cursor)) {
+      streak += 1;
+      cursor = this.offsetDate(cursor, -1);
+    }
+    return streak;
+  }
+
+  /** 本地时区 YYYY-MM-DD */
+  private toDateStr(d: Date): string {
+    const y = d.getFullYear();
+    const m = String(d.getMonth() + 1).padStart(2, '0');
+    const day = String(d.getDate()).padStart(2, '0');
+    return `${y}-${m}-${day}`;
+  }
+
+  /** 规范化日期字符串为 YYYY-MM-DD */
+  private normalizeDate(date: string): string {
+    if (/^\d{4}-\d{2}-\d{2}$/.test(date)) return date;
+    return this.toDateStr(new Date());
+  }
+
+  /** 日期偏移 n 天 */
+  private offsetDate(dateStr: string, n: number): string {
+    const [y, m, d] = dateStr.split('-').map(Number);
+    const dt = new Date(y, m - 1, d);
+    dt.setDate(dt.getDate() + n);
+    return this.toDateStr(dt);
   }
 
   /**

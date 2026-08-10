@@ -112,6 +112,14 @@ export default function Index() {
           </View>
         )}
       </ScrollView>
+
+      {/* 发帖悬浮按钮 */}
+      <View
+        className='index__fab'
+        onClick={() => Taro.navigateTo({ url: '/pages/post-create/index' })}
+      >
+        <Text className='index__fab-icon'>+</Text>
+      </View>
     </View>
   )
 }

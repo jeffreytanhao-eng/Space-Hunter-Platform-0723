@@ -83,6 +83,28 @@
     color: rgba(255, 255, 255, 0.7);
   }
 
+  &__fav-btn {
+    position: absolute;
+    top: 12px;
+    right: 12px;
+    width: 56px;
+    height: 56px;
+    border-radius: 28px;
+    background-color: rgba(10, 14, 39, 0.5);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  &__fav-icon {
+    font-size: 32px;
+    color: #fff;
+
+    &--active {
+      color: var(--color-warning);
+    }
+  }
+
   &__empty,
   &__loading,
   &__no-more {

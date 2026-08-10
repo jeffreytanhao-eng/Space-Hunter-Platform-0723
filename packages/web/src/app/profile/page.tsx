@@ -6,6 +6,7 @@ import { getMe, updateProfile, updatePrivacy, uploadAvatar, getUser, updatePassw
 import { getPosts } from '@/services/posts'
 import { followUser, unfollowUser, getFollowStatus, getFollowers, getFollowing } from '@/services/follows'
 import { getGalleryList } from '@/services/gallery'
+import { getFavoritePosts, getFavoriteGallery } from '@/services/favorites'
 import { Header } from '@/components/layout/header'
 import { Footer } from '@/components/layout/footer'
 import { Card } from '@/components/ui/card'
@@ -18,7 +19,7 @@ import { format } from 'date-fns'
 import {
   User, Camera, Save, Heart, MessageCircle,
   Shield, Eye, EyeOff, Loader2, UserPlus, UserMinus,
-  Users, Image as ImageIcon, Lock, KeyRound, AtSign
+  Users, Image as ImageIcon, Lock, KeyRound, AtSign, Bookmark
 } from 'lucide-react'
 import Link from 'next/link'
 import { useSearchParams } from 'next/navigation'
@@ -49,7 +50,7 @@ function ProfileContent() {
   const [oldPassword, setOldPassword] = useState('')
   const [hasPassword, setHasPassword] = useState(false)
   const [message, setMessage] = useState('')
-  const [activeTab, setActiveTab] = useState<'posts' | 'gallery' | 'followers' | 'following'>('posts')
+  const [activeTab, setActiveTab] = useState<'posts' | 'gallery' | 'followers' | 'following' | 'favorites'>('posts')
 
   /* 隐私设置 */
   const [showEmail, setShowEmail] = useState(false)
@@ -113,6 +114,20 @@ function ProfileContent() {
     queryKey: ['following', viewUserId],
     queryFn: () => getFollowing(viewUserId || authUser?.id || '', { page: 1, pageSize: 20 }),
     enabled: activeTab === 'following',
+  })
+
+  /* 我的收藏 - 帖子 */
+  const { data: favoritePosts } = useQuery({
+    queryKey: ['favoritePosts'],
+    queryFn: () => getFavoritePosts({ page: 1, pageSize: 20 }),
+    enabled: activeTab === 'favorites' && !isViewingOther,
+  })
+
+  /* 我的收藏 - 画廊 */
+  const { data: favoriteGallery } = useQuery({
+    queryKey: ['favoriteGallery'],
+    queryFn: () => getFavoriteGallery({ page: 1, pageSize: 20 }),
+    enabled: activeTab === 'favorites' && !isViewingOther,
   })
 
   const displayUser = isViewingOther ? otherUser : (me || authUser)
@@ -410,6 +425,7 @@ function ProfileContent() {
                 { key: 'gallery' as const, label: '画廊作品', icon: ImageIcon },
                 { key: 'followers' as const, label: '粉丝', icon: Users },
                 { key: 'following' as const, label: '关注', icon: Users },
+                ...(!isViewingOther ? [{ key: 'favorites' as const, label: '我的收藏', icon: Bookmark }] : []),
               ].map((tab) => (
                 <button
                   key={tab.key}
@@ -517,6 +533,64 @@ function ProfileContent() {
                   </div>
                 )}
               </Card>
+            )}
+
+            {/* 我的收藏 */}
+            {activeTab === 'favorites' && !isViewingOther && (
+              <div className="mb-6 space-y-6">
+                {/* 收藏的帖子 */}
+                <Card glowColor="cyan">
+                  <h3 className="mb-3 flex items-center gap-2 text-base font-medium text-star-white">
+                    <MessageCircle className="h-4 w-4 text-neon-cyan" />
+                    收藏的帖子
+                  </h3>
+                  {favoritePosts?.items?.length === 0 ? (
+                    <p className="py-4 text-center text-sm text-star-dim">暂无收藏的帖子</p>
+                  ) : (
+                    <div className="space-y-3">
+                      {favoritePosts?.items?.map((post) => (
+                        <Link key={post.id} href={`/post/${post.id}`}>
+                          <div className="rounded-lg border border-space-600 bg-space-700 p-3 hover:border-neon-cyan/30 transition-colors">
+                            <h4 className="text-sm font-medium text-star-white">{post.title}</h4>
+                            <div className="mt-1 flex items-center gap-3 text-xs text-star-dim">
+                              <span className="flex items-center gap-1"><Heart className="h-3 w-3" /> {post.likesCount}</span>
+                              <span className="flex items-center gap-1"><MessageCircle className="h-3 w-3" /> {post.commentsCount}</span>
+                              <span>{format(new Date(post.createdAt), 'yyyy-MM-dd')}</span>
+                            </div>
+                          </div>
+                        </Link>
+                      ))}
+                    </div>
+                  )}
+                </Card>
+
+                {/* 收藏的画廊作品 */}
+                <Card glowColor="cyan">
+                  <h3 className="mb-3 flex items-center gap-2 text-base font-medium text-star-white">
+                    <Bookmark className="h-4 w-4 text-neon-cyan" />
+                    收藏的画廊作品
+                  </h3>
+                  {favoriteGallery?.items?.length === 0 ? (
+                    <p className="py-4 text-center text-sm text-star-dim">暂无收藏的画廊作品</p>
+                  ) : (
+                    <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                      {favoriteGallery?.items?.map((item) => (
+                        <Link key={item.id} href="/gallery">
+                          <div className="overflow-hidden rounded-xl border border-space-600 bg-space-800 transition-all hover:border-neon-cyan/40">
+                            <img src={item.imageUrl} alt={item.title} className="h-40 w-full object-cover" />
+                            <div className="p-3">
+                              <h4 className="text-sm font-medium text-star-white line-clamp-1">{item.title}</h4>
+                              <div className="mt-1 flex items-center gap-2 text-xs text-star-dim">
+                                <Heart className="h-3 w-3" /> {item.likesCount}
+                              </div>
+                            </div>
+                          </div>
+                        </Link>
+                      ))}
+                    </div>
+                  )}
+                </Card>
+              </div>
             )}
 
             {/* 隐私设置（仅自己可见） */}

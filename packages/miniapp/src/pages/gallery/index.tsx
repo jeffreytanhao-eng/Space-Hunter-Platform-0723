@@ -1,8 +1,9 @@
 import { useState } from 'react'
 import { View, Text, Image, ScrollView } from '@tarojs/components'
 import Taro, { useDidShow, usePullDownRefresh } from '@tarojs/taro'
-import { galleryApi } from '@/services/api'
+import { galleryApi, favoritesApi } from '@/services/api'
 import type { GalleryItem } from '@/services/api'
+import { isLoggedIn } from '@/stores/auth'
 import './index.scss'
 
 /** 画廊分类 */
@@ -24,6 +25,8 @@ export default function Gallery() {
   const [page, setPage] = useState(1)
   const [hasMore, setHasMore] = useState(true)
   const [loading, setLoading] = useState(false)
+  /** 收藏状态表（key 为 gallery id） */
+  const [favMap, setFavMap] = useState<Record<string, boolean>>({})
 
   /** 加载画廊列表 */
   const loadGallery = async (pageNum: number, cat: string, append = false) => {
@@ -75,6 +78,27 @@ export default function Gallery() {
     })
   }
 
+  /** 收藏/取消收藏画廊作品 */
+  const handleFavorite = async (item: GalleryItem) => {
+    if (!isLoggedIn()) {
+      Taro.navigateTo({ url: '/pages/login/index' })
+      return
+    }
+    const currently = !!favMap[item.id]
+    try {
+      if (currently) {
+        await favoritesApi.remove('gallery', item.id)
+        Taro.showToast({ title: '已取消收藏', icon: 'none' })
+      } else {
+        await favoritesApi.add({ targetType: 'gallery', targetId: item.id })
+        Taro.showToast({ title: '收藏成功', icon: 'success' })
+      }
+      setFavMap(prev => ({ ...prev, [item.id]: !currently }))
+    } catch {
+      // 错误已在 request 层处理
+    }
+  }
+
   return (
     <View className='gallery'>
       {/* 分类筛选 */}
@@ -108,6 +132,14 @@ export default function Gallery() {
                 <Text className='gallery__item-title'>{item.title}</Text>
                 <Text className='gallery__item-author'>
                   {item.author?.nickname || item.author?.username || '匿名'}
+                </Text>
+              </View>
+              <View
+                className='gallery__fav-btn'
+                onClick={(e) => { e.stopPropagation(); handleFavorite(item) }}
+              >
+                <Text className={`gallery__fav-icon ${favMap[item.id] ? 'gallery__fav-icon--active' : ''}`}>
+                  {favMap[item.id] ? '⭐' : '☆'}
                 </Text>
               </View>
             </View>
