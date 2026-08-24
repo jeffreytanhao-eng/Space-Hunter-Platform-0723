@@ -1,4 +1,4 @@
-﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿'use client'
+﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿'use client'
 
 import { useState } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
@@ -14,6 +14,7 @@ import { Avatar } from '@/components/ui/avatar'
 import { Skeleton } from '@/components/ui/skeleton'
 import { Starfield } from '@/components/effects/starfield'
 import { useAuthStore } from '@/stores/auth-store'
+import { UserProfileModal } from '@/components/ui/user-profile-modal'
 import { format } from 'date-fns'
 import { useTranslation } from '@/lib/i18n'
 import {
@@ -49,6 +50,7 @@ export default function GalleryPage() {
   /* Lightbox 状态 */
   const [lightboxIndex, setLightboxIndex] = useState<number | null>(null)
   const [showFitsMeta, setShowFitsMeta] = useState(false)
+  const [profileUserId, setProfileUserId] = useState<string | null>(null)
 
   /* 申请弹窗状态 */
   const [showApplyModal, setShowApplyModal] = useState(false)
@@ -299,8 +301,13 @@ export default function GalleryPage() {
                     <h3 className="text-sm font-medium text-star-white line-clamp-1">{item.title}</h3>
                     <div className="mt-1.5 flex items-center justify-between">
                       <div className="flex items-center gap-2">
-                        <Avatar src={item.authorAvatar} alt={item.authorNickname} size="sm" />
-                        <span className="text-xs text-star-dim">{item.authorNickname}</span>
+                        <button
+                          onClick={(e) => { e.stopPropagation(); setProfileUserId(item.authorId) }}
+                          className="group flex items-center gap-2"
+                        >
+                          <Avatar src={item.authorAvatar} alt={item.authorNickname} size="sm" />
+                          <span className="text-xs text-star-dim group-hover:text-neon-blue transition-colors">{item.authorNickname}</span>
+                        </button>
                       </div>
                       <div className="flex items-center gap-2 text-xs text-star-dim">
                         <button
@@ -376,12 +383,14 @@ export default function GalleryPage() {
             {/* 顶部工具栏 */}
             <div className="flex items-center justify-between px-6 py-3">
               <div className="flex items-center gap-3">
+              <button onClick={() => setProfileUserId(items[lightboxIndex].authorId)} className="group flex items-center gap-3">
                 <Avatar src={items[lightboxIndex].authorAvatar} alt={items[lightboxIndex].authorNickname} size="sm" />
-                <div>
-                  <p className="text-sm font-medium text-star-white">{items[lightboxIndex].authorNickname}</p>
+                <div className="text-left">
+                  <p className="text-sm font-medium text-star-white group-hover:text-neon-blue transition-colors">{items[lightboxIndex].authorNickname}</p>
                   <p className="text-xs text-star-dim">{format(new Date(items[lightboxIndex].createdAt), 'yyyy-MM-dd')}</p>
                 </div>
-              </div>
+              </button>
+            </div>
               <div className="flex items-center gap-2">
                 {items[lightboxIndex].fitsMeta && (
                   <Button variant="ghost" size="sm" onClick={() => setShowFitsMeta(!showFitsMeta)}>
@@ -621,6 +630,11 @@ export default function GalleryPage() {
             )}
           </div>
         </div>
+      )}
+
+      {/* 用户资料弹窗 */}
+      {profileUserId && (
+        <UserProfileModal userId={profileUserId} onClose={() => setProfileUserId(null)} />
       )}
 
       <Footer />

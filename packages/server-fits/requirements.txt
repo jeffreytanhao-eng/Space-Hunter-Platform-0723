@@ -8,5 +8,3 @@ rawpy
 tifffile
 python-multipart
 cos-python-sdk-v5
-photutils
-scipy

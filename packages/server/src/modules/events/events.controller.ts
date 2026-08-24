@@ -21,6 +21,7 @@ import { CreateEventDto } from './dto/create-event.dto';
 import { ReviewEventDto } from './dto/review-event.dto';
 import { QueryEventDto } from './dto/query-event.dto';
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
+import { OptionalJwtAuthGuard } from '../../common/guards/optional-jwt-auth.guard';
 import { CurrentUser } from '../../common/decorators/current-user.decorator';
 
 @ApiTags('活动')
@@ -29,9 +30,13 @@ export class EventsController {
   constructor(private readonly eventsService: EventsService) {}
 
   @Get()
+  @UseGuards(OptionalJwtAuthGuard)
   @ApiOperation({ summary: '活动列表（仅已审核）' })
-  async findAll(@Query() query: QueryEventDto) {
-    return this.eventsService.findAll(query);
+  async findAll(
+    @Query() query: QueryEventDto,
+    @CurrentUser('id') userId: string | undefined,
+  ) {
+    return this.eventsService.findAll(query, userId);
   }
 
   @Get('mine')
@@ -46,10 +51,14 @@ export class EventsController {
   }
 
   @Get(':id')
+  @UseGuards(OptionalJwtAuthGuard)
   @ApiOperation({ summary: '活动详情' })
   @ApiParam({ name: 'id', description: '活动 ID' })
-  async findById(@Param('id') id: string) {
-    return this.eventsService.findById(id);
+  async findById(
+    @Param('id') id: string,
+    @CurrentUser('id') userId: string | undefined,
+  ) {
+    return this.eventsService.findById(id, userId);
   }
 
   @Post()

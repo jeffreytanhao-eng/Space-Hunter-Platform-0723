@@ -1,317 +1,288 @@
 'use client'
 
-import { useState, useEffect, useRef } from 'react'
-import { useRouter } from 'next/navigation'
-import { useAuthStore } from '@/stores/auth-store'
-import { volcUpload, volcEnhance, volcAiUpscale } from '@/services/volc'
+import { useState, useEffect, useRef, useCallback } from 'react'
+import {
+  processImage,
+  pollJob,
+  getHistory,
+  deleteJob,
+  type ProcessJob,
+} from '@/services/image-process'
 import CompareViewer from '@/components/fits/compare-viewer'
 
-/* 模型选项 */
-const MODELS = [
-  { id: 'standard', label: 'standard 标准版', desc: '保真优先，改动最小' },
-  { id: 'professional', label: 'professional 专业版', desc: '平衡清晰度与保真' },
-  { id: 'max', label: 'max 大模型增强', desc: '补充细节，差异最明显' },
-  { id: 'aigc', label: 'AIGC 大模型超分', desc: 'veImageX 生成式补细节，最高 30x' },
+/* 风格选项 */
+const STYLES = [
+  { id: 'deepspace', label: '深空', desc: '增强星云对比' },
+  { id: 'milkyway', label: '银河', desc: '突出银河带' },
+  { id: 'nebula', label: '星云', desc: '强化色彩' },
+  { id: 'galaxy', label: '星系', desc: '提升旋臂细节' },
 ] as const
 
-type ModelResult = {
-  toolVersion: string
-  image_url: string
-  image_width: number
-  image_height: number
-  image_format: string
-  image_size: number
+/* 格式化文件大小 */
+function formatSize(bytes: number | null): string {
+  if (!bytes) return '-'
+  if (bytes < 1024) return `${bytes} B`
+  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`
+  return `${(bytes / 1024 / 1024).toFixed(1)} MB`
 }
 
-/* 火山引擎图像画质增强测试页（隐藏路由，仅管理员） */
-export default function VolcTestPage() {
-  const router = useRouter()
-  const { isAuthenticated, user, isLoading } = useAuthStore()
+/* 格式化时间 */
+function formatTime(dateStr: string): string {
+  const d = new Date(dateStr)
+  return `${d.getMonth() + 1}/${d.getDate()} ${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`
+}
 
+/* 拼接图片完整 URL */
+function imageUrl(path: string | null): string | null {
+  if (!path) return null
+  return path
+}
+
+/** 历史记录每页条数（减小以降低超大图渲染压力） */
+const HISTORY_PAGE_SIZE = 6
+
+/** 生成缩略预览图 URL（避免前端解码超大原图） */
+function makeThumbUrl(file: File, maxW = 1200): Promise<string> {
+  return new Promise((resolve) => {
+    const url = URL.createObjectURL(file)
+    const img = new Image()
+    img.onload = () => {
+      try {
+        const w = Math.min(img.naturalWidth, maxW)
+        const scale = w / img.naturalWidth
+        const h = Math.round(img.naturalHeight * scale)
+        const canvas = document.createElement('canvas')
+        canvas.width = w
+        canvas.height = h
+        const ctx = canvas.getContext('2d')
+        if (!ctx) {
+          resolve(url)
+          return
+        }
+        ctx.drawImage(img, 0, 0, w, h)
+        URL.revokeObjectURL(url)
+        canvas.toBlob(
+          (blob) => {
+            if (blob) resolve(URL.createObjectURL(blob))
+            else resolve(url)
+          },
+          'image/jpeg',
+          0.85,
+        )
+      } catch {
+        resolve(url)
+      }
+    }
+    img.onerror = () => resolve(url)
+    img.src = url
+  })
+}
+
+export default function VolcTestPage() {
   const fileRef = useRef<HTMLInputElement>(null)
   const [originalUrl, setOriginalUrl] = useState('')
-  const [fileId, setFileId] = useState('')
   const [fileName, setFileName] = useState('')
 
-  /* 默认选中 max + 4x，让差异易见 */
-  const [selectedModels, setSelectedModels] = useState<string[]>(['max'])
-  const [multiple, setMultiple] = useState('4')
-  const [useMultiple, setUseMultiple] = useState(true)
-  const [targetWidth, setTargetWidth] = useState('')
-  const [targetHeight, setTargetHeight] = useState('')
-  /* AIGC 超分：需要公网可访问的原图 URL */
-  const [aigcUrl, setAigcUrl] = useState('')
+  /* 通道 A 模式与参数 */
+  const [styleA, setStyleA] = useState<'classic' | 'smart'>('classic')
+  /* 经典天文模式参数 */
+  const [beta, setBeta] = useState(4.0)
+  const [residualRef, setResidualRef] = useState(50.0)
+  /* 智能增强模式参数 */
+  const [stretch, setStretch] = useState<'asinh' | 'log' | 'sqrt' | 'linear'>('asinh')
+  const [zscaleContrast, setZscaleContrast] = useState(0.25)
+  const [asinhA, setAsinhA] = useState(0.5)
+  const [boxSize, setBoxSize] = useState(128)
+  const [enableCosmics, setEnableCosmics] = useState(true)
+  const [cosmicsSigclip, setCosmicsSigclip] = useState(4.5)
 
+  /* 通道 B 参数 */
+  const [style, setStyle] = useState('deepspace')
+  const [intensity, setIntensity] = useState(0.5)
+
+  /* 状态 */
   const [loading, setLoading] = useState(false)
   const [stage, setStage] = useState('')
   const [error, setError] = useState('')
-  const [downloading, setDownloading] = useState(false)
-  const [results, setResults] = useState<ModelResult[]>([])
-  const [activeResult, setActiveResult] = useState<string>('')
+  const [currentJob, setCurrentJob] = useState<ProcessJob | null>(null)
+  const [activeChannel, setActiveChannel] = useState<'A' | 'B'>('A')
 
-  /* 后处理：锐化 + 对比度（修正火山超分后的平滑感） */
-  const [sharpness, setSharpness] = useState(0.8) // 0-2，锐化强度
-  const [contrast, setContrast] = useState(1.1) // 0.8-1.6，对比度倍率
+  /* 历史记录 */
+  const [history, setHistory] = useState<ProcessJob[]>([])
+  const [historyTotal, setHistoryTotal] = useState(0)
+  const [historyPage, setHistoryPage] = useState(1)
+  const [selectedHistoryJob, setSelectedHistoryJob] = useState<ProcessJob | null>(null)
+  // 待删除确认的记录（非阻塞弹窗，避免 window.confirm 在部分 webview 中导致问题）
+  const [pendingDelete, setPendingDelete] = useState<ProcessJob | null>(null)
+  const [deleting, setDeleting] = useState(false)
 
-  /* 鉴权：未登录或非管理员跳转登录 */
-  useEffect(() => {
-    if (isLoading) return
-    if (!isAuthenticated) {
-      router.replace('/login')
-    } else if (user?.role !== 'admin') {
-      router.replace('/')
+  /* 加载历史记录（全局共享，无需 sessionId） */
+  const loadHistory = useCallback(async (page = 1) => {
+    try {
+      const res = await getHistory(page, HISTORY_PAGE_SIZE)
+      setHistory(res.data)
+      setHistoryTotal(res.total)
+      setHistoryPage(page)
+    } catch {
+      // 忽略错误
     }
-  }, [isAuthenticated, isLoading, user, router])
+  }, [])
 
-  if (isLoading || !isAuthenticated || user?.role !== 'admin') {
-    return (
-      <div className="flex min-h-screen items-center justify-center bg-space-900 text-star-dim">
-        权限校验中...
-      </div>
-    )
-  }
+  useEffect(() => {
+    loadHistory(1)
+  }, [loadHistory])
 
-  /** 切换模型多选 */
-  const toggleModel = (id: string) => {
-    setSelectedModels((prev) =>
-      prev.includes(id) ? prev.filter((m) => m !== id) : [...prev, id],
-    )
-  }
-
-  /** 选择文件：本地预览 + 自动缩放（兼容火山尺寸限制）+ 上传 */
-  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+  /** 选择文件 */
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
     if (!file) return
     setError('')
-    setResults([])
-    setActiveResult('')
+    setCurrentJob(null)
     setFileName(file.name)
-    setFileId('')
-    setOriginalUrl(URL.createObjectURL(file))
-
-    setLoading(true)
-    setStage('正在处理图片...')
-    try {
-      const { blob, resized } = await normalizeImage(file)
-      if (resized) setStage('原图超出火山尺寸限制，已自动缩放')
-      const id = await volcUpload(blob)
-      setFileId(id)
-      setStage(resized ? '已缩放并上传成功' : '上传成功，可提交增强')
-    } catch (err) {
-      setError(err instanceof Error ? err.message : '上传失败')
-    } finally {
-      setLoading(false)
-    }
+    // 用缩略图做预览，避免前端解码超大原图
+    makeThumbUrl(file).then(setOriginalUrl)
   }
 
-  /** 提交增强（可多模型并发） */
-  const handleEnhance = async () => {
-    if (!fileId) {
-      setError('请先上传图片')
+  /** 统一提交处理
+   * mode: 'A' 仅通道A, 'B' 仅通道B, 'both' 双通道
+   */
+  const submitProcess = async (mode: 'A' | 'B' | 'both') => {
+    const file = fileRef.current?.files?.[0]
+    if (!file) {
+      setError('请先选择图片')
       return
     }
-    if (selectedModels.length === 0) {
-      setError('请至少选择一个模型')
-      return
-    }
+
     setError('')
-    setResults([])
-    setActiveResult('')
     setLoading(true)
-    setStage(
-      `正在用 ${selectedModels.length} 个模型并发增强（multiple=${useMultiple ? multiple : '默认'}）...`,
-    )
+    const modeText = mode === 'both' ? '双通道处理' : `通道 ${mode} 处理`
+    setStage(`正在上传并启动${modeText}...`)
+    setCurrentJob(null)
+
     try {
-      const tasks = selectedModels.map(async (tv) => {
-        if (tv === 'aigc') {
-          if (!aigcUrl.trim()) {
-            throw new Error('AIGC 超分需要填写公网原图 URL')
-          }
-          const res = await volcAiUpscale({
-            imageUrl: aigcUrl.trim(),
-            multiple: useMultiple && multiple ? parseFloat(multiple) : undefined,
-          })
-          return {
-            toolVersion: tv,
-            image_url: res.image_url,
-            image_width: 0,
-            image_height: 0,
-            image_format: res.format,
-            image_size: res.size,
-          } as ModelResult
-        }
-        const res = await volcEnhance({
-          imageUrl: fileId,
-          toolVersion: tv,
-          multiple: useMultiple && multiple ? parseFloat(multiple) : undefined,
-          targetWidth: targetWidth ? parseInt(targetWidth, 10) : undefined,
-          targetHeight: targetHeight ? parseInt(targetHeight, 10) : undefined,
-        })
-        return { toolVersion: tv, ...res } as ModelResult
+      const job = await processImage({
+        file,
+        mode,
+        styleA,
+        beta,
+        residualRef,
+        stretch,
+        zscaleContrast,
+        asinhA,
+        boxSize,
+        enableCosmics,
+        cosmicsSigclip,
+        style,
+        intensity,
       })
-      const done = await Promise.all(tasks)
-      setResults(done)
-      setActiveResult(done[0]?.toolVersion || '')
-      setStage('增强完成，拖动滑块对比前后差异')
+      setCurrentJob(job)
+      // 默认展示实际执行的通道
+      setActiveChannel(mode === 'B' ? 'B' : 'A')
+      setStage('处理中，请等待...')
+
+      // 轮询直到完成
+      const finalJob = await pollJob(job.id, (updated) => {
+        setCurrentJob(updated)
+        const aProcessing = updated.channelAStatus === 'processing'
+        const bProcessing = updated.channelBStatus === 'processing'
+        if (aProcessing && bProcessing) setStage('通道 A + B 同时处理中...')
+        else if (aProcessing) setStage('通道 A 处理中...')
+        else if (bProcessing) setStage('通道 B 处理中...')
+      })
+
+      setCurrentJob(finalJob)
+      setStage('处理完成')
+      loadHistory(1)
     } catch (err) {
-      setError(err instanceof Error ? err.message : '增强失败')
+      setError(err instanceof Error ? err.message : '处理失败')
     } finally {
       setLoading(false)
     }
   }
 
-  /** Canvas 后处理：锐化（卷积核）+ 对比度，修正火山超分后的平滑感 */
-  const enhanceImage = (blob: Blob, sharp: number, contrast: number): Promise<Blob> => {
-    return new Promise((resolve, reject) => {
-      const img = new Image()
-      img.onload = () => {
-        const canvas = document.createElement('canvas')
-        canvas.width = img.width
-        canvas.height = img.height
-        const ctx = canvas.getContext('2d')!
-        ctx.drawImage(img, 0, 0)
+  /** 下载图片 */
+  const handleDownload = (url: string, label: string) => {
+    const a = document.createElement('a')
+    a.href = url
+    a.download = `${label}-${fileName || 'image'}.jpg`
+    document.body.appendChild(a)
+    a.click()
+    a.remove()
+  }
 
-        // 对比度：线性映射 c*(v-128)+128
-        if (contrast !== 1) {
-          const id = ctx.getImageData(0, 0, canvas.width, canvas.height)
-          const d = id.data
-          const c = contrast
-          for (let i = 0; i < d.length; i += 4) {
-            for (let k = 0; k < 3; k++) {
-              d[i + k] = Math.max(0, Math.min(255, c * (d[i + k] - 128) + 128))
-            }
-          }
-          ctx.putImageData(id, 0, 0)
-        }
+  /** 点击历史记录项 */
+  const handleHistoryClick = (job: ProcessJob) => {
+    setSelectedHistoryJob(job)
+    setActiveChannel('A')
+  }
 
-        // 锐化：3x3 拉普拉斯锐化卷积核
-        if (sharp > 0) {
-          const w = canvas.width
-          const h = canvas.height
-          const src = ctx.getImageData(0, 0, w, h).data
-          const out = new Uint8ClampedArray(src.length)
-          const amount = sharp * 20 // 锐化强度系数
-          for (let y = 1; y < h - 1; y++) {
-            for (let x = 1; x < w - 1; x++) {
-              const i = (y * w + x) * 4
-              for (let k = 0; k < 3; k++) {
-                const center = src[(y * w + x) * 4 + k]
-                const up = src[((y - 1) * w + x) * 4 + k]
-                const down = src[((y + 1) * w + x) * 4 + k]
-                const left = src[(y * w + x - 1) * 4 + k]
-                const right = src[(y * w + x + 1) * 4 + k]
-                const sharpened = center + amount * (4 * center - up - down - left - right)
-                out[i + k] = Math.max(0, Math.min(255, sharpened))
-              }
-              out[i + 3] = src[i + 3]
-            }
-          }
-          ctx.putImageData(new ImageData(out, w, h), 0, 0)
-        }
+  /** 点击删除按钮：弹出确认（非阻塞） */
+  const handleDeleteClick = useCallback((e: React.MouseEvent, job: ProcessJob) => {
+    e.stopPropagation()
+    setPendingDelete(job)
+  }, [])
 
-        canvas.toBlob(
-          (b) => (b ? resolve(b) : reject(new Error('图片处理失败'))),
-          'image/png',
-        )
+  /** 确认删除 */
+  const confirmDelete = useCallback(async () => {
+    const job = pendingDelete
+    if (!job || deleting) return
+    setDeleting(true)
+    try {
+      await deleteJob(job.id)
+      // 从列表中移除
+      setHistory((prev) => prev.filter((j) => j.id !== job.id))
+      setHistoryTotal((prev) => prev - 1)
+      if (selectedHistoryJob?.id === job.id) {
+        setSelectedHistoryJob(null)
       }
-      img.onerror = () => reject(new Error('图片加载失败'))
-      img.src = URL.createObjectURL(blob)
-    })
-  }
-
-  /** 将图片缩放至火山支持尺寸（宽高均 ≤2048 且 ≥256），保持宽高比 */
-  const normalizeImage = async (file: File): Promise<{ blob: Blob; resized: boolean }> => {
-    const bitmap = await createImageBitmap(file)
-    const ow = bitmap.width
-    const oh = bitmap.height
-    const maxDim = Math.max(ow, oh)
-    const minDim = Math.min(ow, oh)
-    let scale = 1
-    if (maxDim > 2048) scale = 2048 / maxDim
-    else if (minDim < 256) scale = 256 / minDim
-    if (scale === 1) {
-      bitmap.close()
-      return { blob: file, resized: false }
-    }
-    const w = Math.round(ow * scale)
-    const h = Math.round(oh * scale)
-    const canvas = document.createElement('canvas')
-    canvas.width = w
-    canvas.height = h
-    canvas.getContext('2d')!.drawImage(bitmap, 0, 0, w, h)
-    bitmap.close()
-    const blob = await new Promise<Blob>((resolve, reject) =>
-      canvas.toBlob(
-        (b) => (b ? resolve(b) : reject(new Error('图片处理失败'))),
-        'image/jpeg',
-        0.95,
-      ),
-    )
-    return { blob, resized: true }
-  }
-
-  /** 通过后端代理拉取图片（规避 CORS），并应用锐化/对比度后导出 */
-  const handleDownload = async (r: ModelResult) => {
-    setDownloading(true)
-    setError('')
-    try {
-      // 经后端代理获取原始字节（浏览器直接 fetch 火山 URL 会因 CORS 失败）
-      const token = localStorage.getItem('auth_token')
-      const proxy = await fetch(`/api/volc/image?url=${encodeURIComponent(r.image_url)}`, {
-        headers: token ? { Authorization: `Bearer ${token}` } : {},
-      })
-      if (!proxy.ok) throw new Error('下载失败')
-      const blob = await proxy.blob()
-
-      // 加载到 canvas 做锐化 + 对比度后处理
-      const processed = await enhanceImage(blob, sharpness, contrast)
-      const url = URL.createObjectURL(processed)
-      const a = document.createElement('a')
-      a.href = url
-      a.download = `enhanced-${r.toolVersion}-${fileName || 'image'}.${processed.type.includes('png') ? 'png' : 'jpeg'}`
-      document.body.appendChild(a)
-      a.click()
-      a.remove()
-      URL.revokeObjectURL(url)
-    } catch (err) {
-      setError(err instanceof Error ? err.message : '下载失败')
+      setPendingDelete(null)
+    } catch (err: any) {
+      setError('删除失败：' + (err?.message || err))
     } finally {
-      setDownloading(false)
+      setDeleting(false)
     }
+  }, [pendingDelete, deleting, selectedHistoryJob])
+
+  /** 当前展示的任务（新处理的或历史选中的） */
+  const displayJob = selectedHistoryJob || currentJob
+
+  /** 当前通道的结果 URL */
+  const getResultUrl = (job: ProcessJob | null): string | null => {
+    if (!job) return null
+    return imageUrl(activeChannel === 'A' ? job.channelAPath : job.channelBPath)
   }
 
-  const active = results.find((r) => r.toolVersion === activeResult) || results[0]
+  const resultUrl = getResultUrl(displayJob)
+  const resultStatus = displayJob
+    ? activeChannel === 'A'
+      ? displayJob.channelAStatus
+      : displayJob.channelBStatus
+    : ''
+
+  /** 当前通道结果尺寸信息 */
+  const resultSize = displayJob
+    ? activeChannel === 'A'
+      ? displayJob.channelASize
+      : displayJob.channelBSize
+    : null
+  const resultWidth = displayJob
+    ? activeChannel === 'A'
+      ? displayJob.channelAWidth
+      : displayJob.channelBWidth
+    : null
+  const resultHeight = displayJob
+    ? activeChannel === 'A'
+      ? displayJob.channelAHeight
+      : displayJob.channelBHeight
+    : null
 
   return (
     <div className="min-h-screen bg-space-900 p-6 text-star-white">
       <div className="mx-auto max-w-6xl">
-        <h1 className="text-2xl font-bold text-neon-blue">图像画质增强测试</h1>
+        <h1 className="text-2xl font-bold text-neon-blue">双通道图像增强测试</h1>
         <p className="mt-1 text-sm text-star-dim">
-          隐藏测试页 · 仅管理员可见 · {fileName || '未选择图片'}
-          {fileId && <span className="ml-2 text-green-400">已上传 ✓</span>}
+          无需登录 · 通道 A 保真增强（去背景+宇宙线+ZScale拉伸） · 通道 B AI 渲染（开发中，当前为占位效果）
         </p>
-
-        {/* 流程步骤指示 */}
-        <div className="mt-4 flex items-center gap-2 text-sm">
-          {[
-            { label: '1 上传图片', done: !!fileId },
-            { label: '2 AI 增强', done: results.length > 0 },
-            { label: '3 对比导出', done: results.length > 0 },
-          ].map((s, i) => (
-            <div key={i} className="flex items-center gap-2">
-              {i > 0 && <span className="text-space-600">→</span>}
-              <span
-                className={`rounded-full px-3 py-1 ${
-                  s.done
-                    ? 'bg-green-500/20 text-green-400'
-                    : 'bg-space-700 text-star-dim'
-                }`}
-              >
-                {s.label}
-              </span>
-            </div>
-          ))}
-        </div>
 
         {error && (
           <div className="mt-3 rounded-lg border border-red-500/30 bg-red-500/10 px-4 py-2 text-sm text-red-400">
@@ -319,208 +290,583 @@ export default function VolcTestPage() {
           </div>
         )}
 
-        {/* 参数区 */}
-        <div className="mt-5 grid grid-cols-1 gap-4 rounded-xl border border-space-700 bg-space-800 p-5 md:grid-cols-2">
-          <div>
-            <label className="block text-sm text-star-dim">上传测试图片 (≤10MB)</label>
-            <input
-              ref={fileRef}
-              type="file"
-              accept="image/png,image/jpeg,image/webp,image/jpg"
-              onChange={handleFileChange}
-              className="mt-1 block w-full cursor-pointer rounded-lg border border-space-600 bg-space-700 p-2 text-sm text-star-white"
-            />
-            <p className="mt-1 text-xs text-star-dim">
-              建议上传带细节的照片（星云、月亮、文字、建筑），便于对比增强效果
+        {/* 处理状态条 */}
+        {loading && (
+          <div className="mt-3 flex items-center gap-3 rounded-lg border border-neon-blue/30 bg-neon-blue/10 px-4 py-2 text-sm text-neon-blue">
+            <div className="h-4 w-4 animate-spin rounded-full border-2 border-neon-blue border-t-transparent" />
+            {stage}
+          </div>
+        )}
+
+        {/* 三列：上传区 + 通道A卡片 + 通道B卡片 */}
+        <div className="mt-5 grid grid-cols-1 gap-4 md:grid-cols-3">
+          {/* 左列：上传区 */}
+          <div className="space-y-4 rounded-xl border border-space-700 bg-space-800 p-4">
+            <div className="text-sm font-medium text-star-white">上传图片</div>
+            <div>
+              <label className="block text-xs text-star-dim">选择图片 (JPEG/PNG, ≤20MB)</label>
+              <input
+                ref={fileRef}
+                type="file"
+                accept="image/png,image/jpeg,image/jpg"
+                onChange={handleFileChange}
+                className="mt-1 block w-full cursor-pointer rounded-lg border border-space-600 bg-space-700 p-2 text-sm text-star-white"
+              />
+              <p className="mt-1 text-xs text-star-dim">
+                建议上传天文照片（星云、银河、深空）
+              </p>
+              {fileName && (
+                <p className="mt-1 text-xs text-green-400">已选择: {fileName}</p>
+              )}
+            </div>
+
+            {/* 原图预览 */}
+            {originalUrl && (
+              <div className="overflow-hidden rounded-lg border border-space-600">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  src={originalUrl}
+                  alt="原图预览"
+                  className="aspect-video w-full object-cover"
+                />
+              </div>
+            )}
+
+            {/* 一键双通道按钮 */}
+            <button
+              onClick={() => submitProcess('both')}
+              disabled={loading || !fileName}
+              className="w-full rounded-lg bg-gradient-to-r from-neon-blue to-purple-500 py-2.5 text-sm font-semibold text-space-900 transition-opacity hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50"
+            >
+              {loading ? '处理中...' : '⚡ 一键双通道处理'}
+            </button>
+            <p className="-mt-2 text-center text-xs text-star-dim">
+              同时执行通道 A 和通道 B
             </p>
           </div>
 
-          {/* 模型选择（多选） */}
-          <div>
-            <label className="block text-sm text-star-dim">增强模型（可多选并发对比）</label>
-            <div className="mt-1 space-y-1.5">
-              {MODELS.map((m) => (
-                <label
-                  key={m.id}
-                  className={`flex cursor-pointer items-center gap-2 rounded-lg border px-3 py-2 text-sm transition-colors ${
-                    selectedModels.includes(m.id)
-                      ? 'border-neon-blue/60 bg-neon-blue/10'
-                      : 'border-space-600 bg-space-700 hover:border-space-500'
+          {/* 中列：通道 A 卡片 */}
+          <div className="rounded-xl border border-neon-blue/30 bg-space-800 p-4">
+            <div className="mb-3 flex items-center justify-between">
+              <div>
+                <div className="text-sm font-semibold text-neon-blue">通道 A — 保真增强</div>
+                <div className="text-xs text-star-dim">去背景 · 宇宙线 · 天文拉伸</div>
+              </div>
+              <div className="rounded-full bg-neon-blue/10 px-2 py-0.5 text-xs text-neon-blue">
+                astropy
+              </div>
+            </div>
+
+            {/* 模式分段选择器 */}
+            <div className="mb-3 flex rounded-lg border border-space-600 bg-space-700 p-0.5 text-xs">
+              <button
+                onClick={() => setStyleA('classic')}
+                className={`flex-1 rounded-md py-1.5 font-medium transition-colors ${
+                  styleA === 'classic'
+                    ? 'bg-neon-blue text-space-900'
+                    : 'text-star-dim hover:text-star-white'
+                }`}
+              >
+                经典天文模式
+              </button>
+              <button
+                onClick={() => setStyleA('smart')}
+                className={`flex-1 rounded-md py-1.5 font-medium transition-colors ${
+                  styleA === 'smart'
+                    ? 'bg-neon-blue text-space-900'
+                    : 'text-star-dim hover:text-star-white'
+                }`}
+              >
+                智能增强模式
+              </button>
+            </div>
+
+            <div className="space-y-3">
+              {styleA === 'classic' ? (
+                <>
+                  {/* 经典：asinh 拉伸强度 (beta) */}
+                  <div>
+                    <label className="flex items-center justify-between text-xs text-star-dim">
+                      <span>拉伸强度（越小暗部提升越强）</span>
+                      <span className="text-neon-blue">{beta.toFixed(1)}</span>
+                    </label>
+                    <input
+                      type="range"
+                      min={0.5}
+                      max={20}
+                      step={0.5}
+                      value={beta}
+                      onChange={(e) => setBeta(parseFloat(e.target.value))}
+                      className="mt-1 w-full accent-neon-blue"
+                    />
+                  </div>
+
+                  {/* 经典：残差参考值 */}
+                  <div>
+                    <label className="flex items-center justify-between text-xs text-star-dim">
+                      <span>残差参考值（背景基准）</span>
+                      <span className="text-neon-blue">{residualRef.toFixed(0)}</span>
+                    </label>
+                    <input
+                      type="range"
+                      min={10}
+                      max={200}
+                      step={5}
+                      value={residualRef}
+                      onChange={(e) => setResidualRef(parseFloat(e.target.value))}
+                      className="mt-1 w-full accent-neon-blue"
+                    />
+                  </div>
+                </>
+              ) : (
+                <>
+                  {/* 拉伸方式 */}
+                  <div>
+                    <label className="block text-xs text-star-dim">拉伸方式</label>
+                    <div className="mt-1 flex flex-wrap gap-2">
+                      {(['asinh', 'log', 'sqrt', 'linear'] as const).map((s) => (
+                        <button
+                          key={s}
+                          onClick={() => setStretch(s)}
+                          className={`rounded-lg border px-3 py-1.5 text-xs transition-colors ${
+                            stretch === s
+                              ? 'border-neon-blue/60 bg-neon-blue/10 text-neon-blue'
+                              : 'border-space-600 bg-space-700 text-star-dim hover:text-star-white'
+                          }`}
+                        >
+                          {s === 'asinh' ? 'Asinh' : s === 'log' ? 'Log' : s === 'sqrt' ? 'Sqrt' : '线性'}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* ZScale 对比度 */}
+                  <div>
+                    <label className="flex items-center justify-between text-xs text-star-dim">
+                      <span>ZScale 对比度（越小越暗）</span>
+                      <span className="text-neon-blue">{zscaleContrast.toFixed(2)}</span>
+                    </label>
+                    <input
+                      type="range"
+                      min={0.05}
+                      max={0.5}
+                      step={0.01}
+                      value={zscaleContrast}
+                      onChange={(e) => setZscaleContrast(parseFloat(e.target.value))}
+                      className="mt-1 w-full accent-neon-blue"
+                    />
+                  </div>
+
+                  {/* Asinh a 参数 */}
+                  {stretch === 'asinh' && (
+                    <div>
+                      <label className="flex items-center justify-between text-xs text-star-dim">
+                        <span>Asinh 强度（越小暗部越强）</span>
+                        <span className="text-neon-blue">{asinhA.toFixed(3)}</span>
+                      </label>
+                      <input
+                        type="range"
+                        min={0.001}
+                        max={1.0}
+                        step={0.005}
+                        value={asinhA}
+                        onChange={(e) => setAsinhA(parseFloat(e.target.value))}
+                        className="mt-1 w-full accent-neon-blue"
+                      />
+                    </div>
+                  )}
+
+                  {/* 背景网格大小 */}
+                  <div>
+                    <label className="flex items-center justify-between text-xs text-star-dim">
+                      <span>背景网格大小（越大越平滑）</span>
+                      <span className="text-neon-blue">{boxSize} px</span>
+                    </label>
+                    <input
+                      type="range"
+                      min={32}
+                      max={256}
+                      step={16}
+                      value={boxSize}
+                      onChange={(e) => setBoxSize(parseInt(e.target.value, 10))}
+                      className="mt-1 w-full accent-neon-blue"
+                    />
+                  </div>
+                </>
+              )}
+
+              {/* 宇宙线去除开关 */}
+              <div className="flex items-center justify-between">
+                <label className="text-xs text-star-dim">宇宙线去除 (astroscrappy)</label>
+                <button
+                  type="button"
+                  onClick={() => setEnableCosmics(!enableCosmics)}
+                  role="switch"
+                  aria-checked={enableCosmics}
+                  className={`relative h-5 w-9 shrink-0 rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-neon-blue/50 ${
+                    enableCosmics ? 'bg-neon-blue' : 'bg-space-600'
                   }`}
                 >
-                  <input
-                    type="checkbox"
-                    checked={selectedModels.includes(m.id)}
-                    onChange={() => toggleModel(m.id)}
-                    className="h-4 w-4"
+                  <span
+                    className={`absolute left-0.5 top-0.5 h-4 w-4 rounded-full bg-white shadow-sm transition-transform ${
+                      enableCosmics ? 'translate-x-4' : 'translate-x-0'
+                    }`}
                   />
-                  <span>
-                    <span className="font-medium">{m.label}</span>
-                    <span className="ml-2 text-xs text-star-dim">{m.desc}</span>
-                  </span>
-                </label>
-              ))}
+                </button>
+              </div>
+
+              {/* 宇宙线敏感度 */}
+              {enableCosmics && (
+                <div>
+                  <label className="flex items-center justify-between text-xs text-star-dim">
+                    <span>敏感度</span>
+                    <span className="text-neon-blue">{cosmicsSigclip.toFixed(1)}σ</span>
+                  </label>
+                  <input
+                    type="range"
+                    min={2.0}
+                    max={8.0}
+                    step={0.1}
+                    value={cosmicsSigclip}
+                    onChange={(e) => setCosmicsSigclip(parseFloat(e.target.value))}
+                    className="mt-1 w-full accent-neon-blue"
+                  />
+                </div>
+              )}
             </div>
-          </div>
 
-          <div>
-            <label className="flex items-center gap-2 text-sm text-star-dim">
-              <input
-                type="checkbox"
-                checked={useMultiple}
-                onChange={(e) => setUseMultiple(e.target.checked)}
-                className="h-4 w-4"
-              />
-              指定放大倍数
-            </label>
-            <input
-              type="number"
-              min={1}
-              step={1}
-              value={multiple}
-              disabled={!useMultiple}
-              onChange={(e) => setMultiple(e.target.value)}
-              className="mt-1 w-full rounded-lg border border-space-600 bg-space-700 p-2 text-sm disabled:opacity-50"
-            />
-            <p className="mt-1 text-xs text-star-dim">倍数越高，放大后细节差异越明显（建议 2-8x）</p>
-          </div>
-
-          <div className="grid grid-cols-2 gap-2">
-            <div>
-              <label className="block text-sm text-star-dim">目标宽度 (px，可选)</label>
-              <input
-                type="number"
-                value={targetWidth}
-                onChange={(e) => setTargetWidth(e.target.value)}
-                className="mt-1 w-full rounded-lg border border-space-600 bg-space-700 p-2 text-sm"
-              />
-            </div>
-            <div>
-              <label className="block text-sm text-star-dim">目标高度 (px，可选)</label>
-              <input
-                type="number"
-                value={targetHeight}
-                onChange={(e) => setTargetHeight(e.target.value)}
-                className="mt-1 w-full rounded-lg border border-space-600 bg-space-700 p-2 text-sm"
-              />
-            </div>
-          </div>
-
-          {/* AIGC 超分：公网原图 URL（仅在选中 AIGC 时显示） */}
-          {selectedModels.includes('aigc') && (
-            <div className="md:col-span-2">
-              <label className="block text-sm text-star-dim">
-                AIGC 原图公网 URL（veImageX 需要可访问的图片地址）
-              </label>
-              <input
-                type="text"
-                value={aigcUrl}
-                onChange={(e) => setAigcUrl(e.target.value)}
-                placeholder="https://.../原图.jpg"
-                className="mt-1 w-full rounded-lg border border-space-600 bg-space-700 p-2 text-sm"
-              />
-              <p className="mt-1 text-xs text-star-dim">
-                可填本地上传后增强结果的图片链接，或任意公网图片地址
-              </p>
-            </div>
-          )}
-
-          {/* 后处理：锐化 + 对比度 */}
-          <div>
-            <label className="flex items-center justify-between text-sm text-star-dim">
-              锐化强度
-              <span className="text-neon-blue">{sharpness.toFixed(1)}</span>
-            </label>
-            <input
-              type="range"
-              min={0}
-              max={2}
-              step={0.1}
-              value={sharpness}
-              onChange={(e) => setSharpness(parseFloat(e.target.value))}
-              className="mt-1 w-full accent-neon-blue"
-            />
-            <p className="mt-1 text-xs text-star-dim">修正火山超分后的平滑感（0=不锐化）</p>
-          </div>
-          <div>
-            <label className="flex items-center justify-between text-sm text-star-dim">
-              对比度
-              <span className="text-neon-blue">{contrast.toFixed(2)}</span>
-            </label>
-            <input
-              type="range"
-              min={0.8}
-              max={1.6}
-              step={0.05}
-              value={contrast}
-              onChange={(e) => setContrast(parseFloat(e.target.value))}
-              className="mt-1 w-full accent-neon-blue"
-            />
-            <p className="mt-1 text-xs text-star-dim">数值越高，明暗对比越强（1.0=不变）</p>
-          </div>
-
-          <div className="md:col-span-2">
+            {/* 单独执行按钮 */}
             <button
-              onClick={handleEnhance}
-              disabled={loading || !fileId}
-              className="w-full rounded-lg bg-neon-blue py-2.5 text-sm font-semibold text-space-900 transition-colors hover:bg-neon-blue/90 disabled:cursor-not-allowed disabled:opacity-50"
+              onClick={() => submitProcess('A')}
+              disabled={loading || !fileName}
+              className="mt-4 w-full rounded-lg border border-neon-blue/50 bg-neon-blue/10 py-2 text-sm font-medium text-neon-blue transition-colors hover:bg-neon-blue/20 disabled:cursor-not-allowed disabled:opacity-40"
             >
-              {loading ? '增强中...' : `开始增强（${selectedModels.length} 个模型）`}
+              仅执行通道 A
             </button>
-            {loading && <p className="mt-2 text-center text-sm text-star-dim">{stage}</p>}
+          </div>
+
+          {/* 右列：通道 B 卡片 */}
+          <div className="rounded-xl border border-purple-400/30 bg-space-800 p-4">
+            <div className="mb-3 flex items-center justify-between">
+              <div>
+                <div className="text-sm font-semibold text-purple-300">通道 B — AI 渲染</div>
+                <div className="text-xs text-star-dim">风格化 · 艺术增强</div>
+              </div>
+              <div className="rounded-full bg-purple-400/10 px-2 py-0.5 text-xs text-purple-300">
+                SD+LoRA
+              </div>
+            </div>
+
+            <div className="space-y-3">
+              <div>
+                <label className="block text-xs text-star-dim">风格选择</label>
+                <div className="mt-1 flex flex-wrap gap-1.5">
+                  {STYLES.map((s) => (
+                    <button
+                      key={s.id}
+                      onClick={() => setStyle(s.id)}
+                      className={`rounded-md border px-2.5 py-1 text-xs transition-colors ${
+                        style === s.id
+                          ? 'border-purple-400/60 bg-purple-400/10 text-purple-300'
+                          : 'border-space-600 bg-space-700 text-star-dim hover:text-star-white'
+                      }`}
+                    >
+                      {s.label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+              <div>
+                <label className="flex items-center justify-between text-xs text-star-dim">
+                  <span>艺术强度</span>
+                  <span className="text-purple-300">{intensity.toFixed(1)}</span>
+                </label>
+                <input
+                  type="range"
+                  min={0}
+                  max={1}
+                  step={0.1}
+                  value={intensity}
+                  onChange={(e) => setIntensity(parseFloat(e.target.value))}
+                  className="mt-1 w-full accent-purple-400"
+                />
+                <p className="mt-1 text-xs text-star-dim">
+                  当前为占位效果，未来接入 SD+LoRA
+                </p>
+              </div>
+            </div>
+
+            {/* 单独执行按钮 */}
+            <button
+              onClick={() => submitProcess('B')}
+              disabled={loading || !fileName}
+              className="mt-4 w-full rounded-lg border border-purple-400/50 bg-purple-400/10 py-2 text-sm font-medium text-purple-300 transition-colors hover:bg-purple-400/20 disabled:cursor-not-allowed disabled:opacity-40"
+            >
+              仅执行通道 B
+            </button>
           </div>
         </div>
 
-        {/* 结果区 */}
-        {results.length > 0 && active && (
+        {/* 结果对比区 */}
+        {displayJob && resultUrl && resultStatus === 'done' && (
           <div className="mt-6 space-y-4">
-            {/* 模型结果标签页 */}
-            <div className="flex flex-wrap items-center gap-2">
-              {results.map((r) => (
-                <button
-                  key={r.toolVersion}
-                  onClick={() => setActiveResult(r.toolVersion)}
-                  className={`rounded-lg px-3 py-1.5 text-sm transition-colors ${
-                    activeResult === r.toolVersion
-                      ? 'bg-green-500/20 text-green-400'
-                      : 'bg-space-700 text-star-dim hover:text-star-white'
-                  }`}
-                >
-                  {MODELS.find((m) => m.id === r.toolVersion)?.label || r.toolVersion} ·{' '}
-                  {r.image_width}×{r.image_height}
-                </button>
-              ))}
+            {/* 通道切换 */}
+            <div className="flex items-center gap-2">
+              <button
+                onClick={() => setActiveChannel('A')}
+                className={`rounded-lg px-4 py-2 text-sm font-medium transition-colors ${
+                  activeChannel === 'A'
+                    ? 'bg-neon-blue/20 text-neon-blue'
+                    : 'bg-space-700 text-star-dim hover:text-star-white'
+                }`}
+              >
+                通道 A（保真增强）
+              </button>
+              <button
+                onClick={() => setActiveChannel('B')}
+                className={`rounded-lg px-4 py-2 text-sm font-medium transition-colors ${
+                  activeChannel === 'B'
+                    ? 'bg-purple-400/20 text-purple-300'
+                    : 'bg-space-700 text-star-dim hover:text-star-white'
+                }`}
+              >
+                通道 B（AI 渲染{displayJob.channelBStatus === 'done' ? '' : '·占位'})
+              </button>
             </div>
 
-            {/* 对比查看器：原图 vs 增强后 */}
+            {/* 尺寸信息 */}
+            <div className="flex flex-wrap gap-4 rounded-lg border border-space-700 bg-space-800 px-4 py-2 text-xs text-star-dim">
+              <span>原图: {displayJob.originalWidth}×{displayJob.originalHeight} ({formatSize(displayJob.originalSize)})</span>
+              <span>→</span>
+              <span className="text-neon-blue">
+                {activeChannel === 'A' ? '通道A' : '通道B'}结果: {resultWidth}×{resultHeight} ({formatSize(resultSize)})
+              </span>
+            </div>
+
+            {/* 对比查看器 */}
             <CompareViewer
-              beforeUrl={originalUrl}
-              afterUrl={active.image_url}
-              afterLabel={`${active.image_width}×${active.image_height}`}
-              magnification={useMultiple ? `${multiple}x` : '默认'}
+              beforeUrl={displayJob.originalPath}
+              afterUrl={resultUrl}
+              afterLabel={`${displayJob.originalWidth}×${displayJob.originalHeight}`}
             />
 
             {/* 下载 */}
             <div className="flex items-center gap-3">
               <button
-                onClick={() => handleDownload(active)}
-                disabled={downloading}
-                className="rounded-lg bg-green-600 px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-green-500 disabled:cursor-not-allowed disabled:opacity-50"
+                onClick={() => handleDownload(resultUrl, `channel-${activeChannel}`)}
+                className="rounded-lg bg-green-600 px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-green-500"
               >
-                {downloading ? '下载中...' : '⬇ 导出下载'}
+                ⬇ 下载结果
               </button>
-              <a
-                href={active.image_url}
-                target="_blank"
-                rel="noreferrer"
-                className="text-sm text-neon-blue hover:underline"
+              <button
+                onClick={() => handleDownload(displayJob.originalPath, 'original')}
+                className="rounded-lg border border-space-600 bg-space-700 px-4 py-2 text-sm font-semibold text-star-white transition-colors hover:border-space-500"
               >
-                新窗口打开增强图（24h 有效）
-              </a>
+                ⬇ 下载原图
+              </button>
+              {selectedHistoryJob && (
+                <button
+                  onClick={() => setSelectedHistoryJob(null)}
+                  className="ml-auto text-sm text-neon-blue hover:underline"
+                >
+                  ← 返回新处理结果
+                </button>
+              )}
             </div>
           </div>
         )}
+
+        {/* 处理中状态显示 */}
+        {displayJob && (resultStatus === 'processing' || resultStatus === 'pending') && (
+          <div className="mt-6 rounded-xl border border-space-700 bg-space-800 p-8 text-center">
+            <div className="mx-auto h-8 w-8 animate-spin rounded-full border-2 border-neon-blue border-t-transparent" />
+            <p className="mt-3 text-sm text-star-dim">
+              {activeChannel === 'A' ? '通道 A' : '通道 B'} 处理中...
+            </p>
+          </div>
+        )}
+
+        {/* 处理失败 */}
+        {displayJob && resultStatus === 'failed' && (
+          <div className="mt-6 rounded-xl border border-red-500/30 bg-red-500/10 p-4 text-sm text-red-400">
+            {activeChannel === 'A' ? '通道 A' : '通道 B'} 处理失败：
+            {(activeChannel === 'A' ? displayJob.channelAError : displayJob.channelBError) || '未知错误'}
+          </div>
+        )}
+
+        {/* 历史记录 */}
+        {history.length > 0 && (
+          <div className="mt-8">
+            <div className="flex items-center justify-between">
+              <h2 className="text-lg font-semibold text-star-white">处理历史</h2>
+              <span className="text-xs text-star-dim">共 {historyTotal} 条</span>
+            </div>
+
+            {/* 历史记录网格：每项显示原图和渲染后图片 */}
+            <div className="mt-3 space-y-3">
+              {history.map((job) => {
+                const isActive = selectedHistoryJob?.id === job.id
+                return (
+                  <div
+                    key={job.id}
+                    onClick={() => handleHistoryClick(job)}
+                    className={`cursor-pointer rounded-xl border-2 p-3 transition-colors ${
+                      isActive
+                        ? 'border-neon-blue bg-space-800'
+                        : 'border-space-700 bg-space-800/50 hover:border-space-500'
+                    }`}
+                    style={{ contentVisibility: 'auto', containIntrinsicSize: 'auto 230px' }}
+                  >
+                    {/* 文件信息 */}
+                    <div className="mb-2 flex items-center justify-between text-xs">
+                      <span className="truncate text-star-white">{job.originalName}</span>
+                      <div className="flex items-center gap-2">
+                        <span className="text-star-dim">{formatTime(job.createdAt)}</span>
+                        <button
+                          onClick={(e) => handleDeleteClick(e, job)}
+                          className="rounded p-1 text-star-dim transition-colors hover:bg-red-500/20 hover:text-red-400"
+                          title="删除此记录"
+                        >
+                          <svg
+                            xmlns="http://www.w3.org/2000/svg"
+                            viewBox="0 0 20 20"
+                            fill="currentColor"
+                            className="h-4 w-4"
+                          >
+                            <path
+                              fillRule="evenodd"
+                              d="M8.75 1A2.75 2.75 0 006 3.75v.443c-.795.077-1.584.176-2.365.298a.75.75 0 10.23 1.482l.149-.022.841 10.518A2.75 2.75 0 007.596 19h4.807a2.75 2.75 0 002.742-2.53l.841-10.52.149.023a.75.75 0 00.23-1.482A41.03 41.03 0 0014 4.193V3.75A2.75 2.75 0 0011.25 1h-2.5zM10 4c.84 0 1.673.025 2.5.075V3.75c0-.69-.56-1.25-1.25-1.25h-2.5c-.69 0-1.25.56-1.25 1.25v.325C8.327 4.025 9.16 4 10 4zM8.58 7.72a.75.75 0 00-1.5.06l.3 7.5a.75.75 0 101.5-.06l-.3-7.5zm4.34.06a.75.75 0 10-1.5-.06l-.3 7.5a.75.75 0 101.5.06l.3-7.5z"
+                              clipRule="evenodd"
+                            />
+                          </svg>
+                        </button>
+                      </div>
+                    </div>
+                    {/* 原图和结果对比缩略图 */}
+                    <div className="grid grid-cols-3 gap-2">
+                      {/* 原图 */}
+                      <div className="relative">
+                        {/* eslint-disable-next-line @next/next/no-img-element */}
+                        <img
+                          src={job.originalPath}
+                          alt="原图"
+                          loading="lazy"
+                          decoding="async"
+                          className="aspect-video w-full rounded-lg object-cover"
+                        />
+                        <span className="absolute bottom-1 left-1 rounded bg-black/70 px-1.5 py-0.5 text-[10px] text-white">
+                          原图 {job.originalWidth}×{job.originalHeight}
+                        </span>
+                      </div>
+                      {/* 通道 A */}
+                      <div className="relative">
+                        {job.channelAPath && job.channelAStatus === 'done' ? (
+                          <>
+                            {/* eslint-disable-next-line @next/next/no-img-element */}
+                            <img
+                              src={job.channelAPath}
+                              alt="通道A"
+                              loading="lazy"
+                              decoding="async"
+                              className="aspect-video w-full rounded-lg object-cover"
+                            />
+                            <span className="absolute bottom-1 left-1 rounded bg-black/70 px-1.5 py-0.5 text-[10px] text-neon-blue">
+                              A {job.channelAWidth}×{job.channelAHeight}
+                            </span>
+                          </>
+                        ) : (
+                          <div className="flex aspect-video w-full items-center justify-center rounded-lg bg-space-700 text-xs text-star-dim">
+                            {job.channelAStatus === 'failed' ? 'A 失败' : job.channelAStatus === 'skipped' ? '—' : 'A 处理中'}
+                          </div>
+                        )}
+                      </div>
+                      {/* 通道 B */}
+                      <div className="relative">
+                        {job.channelBPath && job.channelBStatus === 'done' ? (
+                          <>
+                            {/* eslint-disable-next-line @next/next/no-img-element */}
+                            <img
+                              src={job.channelBPath}
+                              alt="通道B"
+                              loading="lazy"
+                              decoding="async"
+                              className="aspect-video w-full rounded-lg object-cover"
+                            />
+                            <span className="absolute bottom-1 left-1 rounded bg-black/70 px-1.5 py-0.5 text-[10px] text-purple-300">
+                              B {job.channelBWidth}×{job.channelBHeight}
+                            </span>
+                          </>
+                        ) : (
+                          <div className="flex aspect-video w-full items-center justify-center rounded-lg bg-space-700 text-xs text-star-dim">
+                            {job.channelBStatus === 'failed' ? 'B 失败' : job.channelBStatus === 'skipped' ? '—' : 'B 处理中'}
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                )
+              })}
+            </div>
+
+            {/* 分页 */}
+            {historyTotal > HISTORY_PAGE_SIZE && (
+              <div className="mt-4 flex justify-center gap-2">
+                <button
+                  onClick={() => loadHistory(historyPage - 1)}
+                  disabled={historyPage <= 1}
+                  className="rounded-lg border border-space-600 bg-space-700 px-3 py-1.5 text-sm disabled:opacity-50"
+                >
+                  上一页
+                </button>
+                <span className="px-3 py-1.5 text-sm text-star-dim">
+                  {historyPage} / {Math.ceil(historyTotal / HISTORY_PAGE_SIZE)}
+                </span>
+                <button
+                  onClick={() => loadHistory(historyPage + 1)}
+                  disabled={historyPage >= Math.ceil(historyTotal / HISTORY_PAGE_SIZE)}
+                  className="rounded-lg border border-space-600 bg-space-700 px-3 py-1.5 text-sm disabled:opacity-50"
+                >
+                  下一页
+                </button>
+              </div>
+            )}
+          </div>
+        )}
       </div>
+
+      {/* 删除确认弹窗（非阻塞，替代 window.confirm） */}
+      {pendingDelete && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/60"
+          onClick={() => !deleting && setPendingDelete(null)}
+        >
+          <div
+            className="mx-4 w-full max-w-sm rounded-xl border border-space-600 bg-space-800 p-5 shadow-xl"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="text-base font-semibold text-star-white">确认删除</div>
+            <p className="mt-2 break-all text-sm text-star-dim">
+              确定要删除「{pendingDelete.originalName}」吗？删除后不可恢复。
+            </p>
+            <div className="mt-5 flex justify-end gap-3">
+              <button
+                onClick={() => setPendingDelete(null)}
+                disabled={deleting}
+                className="rounded-lg border border-space-600 bg-space-700 px-4 py-2 text-sm text-star-white transition-colors hover:border-space-500 disabled:opacity-50"
+              >
+                取消
+              </button>
+              <button
+                onClick={confirmDelete}
+                disabled={deleting}
+                className="rounded-lg bg-red-600 px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-red-500 disabled:opacity-50"
+              >
+                {deleting ? '删除中...' : '删除'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }

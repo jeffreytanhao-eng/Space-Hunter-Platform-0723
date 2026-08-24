@@ -18,10 +18,11 @@ import { AdminModule } from './modules/admin/admin.module';
 import { UploadModule } from './modules/upload/upload.module';
 import { FitsModule } from './modules/fits/fits.module';
 import { AdsModule } from './modules/ads/ads.module';
-import { VolcModule } from './modules/volc/volc.module';
+import { ImageProcessModule } from './modules/image-process/image-process.module';
 import { FavoritesModule } from './modules/favorites/favorites.module';
 import { MessagesModule } from './modules/messages/messages.module';
 import { NotificationsModule } from './modules/notifications/notifications.module';
+import { DevicesModule } from './modules/devices/devices.module';
 import { CsrfMiddleware } from './common/security/csrf.middleware';
 import { RateLimitMiddleware } from './common/security/rate-limit.middleware';
 import { SanitizeMiddleware } from './common/security/sanitize.middleware';
@@ -53,10 +54,11 @@ import { SanitizeMiddleware } from './common/security/sanitize.middleware';
     UploadModule,
     FitsModule,
     AdsModule,
-    VolcModule,
+    ImageProcessModule,
     FavoritesModule,
     MessagesModule,
     NotificationsModule,
+    DevicesModule,
   ],
   controllers: [AppController],
   providers: [AppService],

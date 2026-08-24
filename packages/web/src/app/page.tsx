@@ -1,10 +1,11 @@
-﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿'use client'
+﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿'use client'
 
 import { useState, useEffect, Suspense } from 'react'
 import { useSearchParams } from 'next/navigation'
 import Link from 'next/link'
 import { useQuery } from '@tanstack/react-query'
 import { getPosts } from '@/services/posts'
+import { getFollowFeed } from '@/services/follows'
 import { getSections } from '@/services/sections'
 import { Header } from '@/components/layout/header'
 import { Sidebar } from '@/components/layout/sidebar'
@@ -15,6 +16,7 @@ import { Avatar } from '@/components/ui/avatar'
 import { Skeleton } from '@/components/ui/skeleton'
 import { Starfield } from '@/components/effects/starfield'
 import { useAuthStore } from '@/stores/auth-store'
+import { UserProfileModal } from '@/components/ui/user-profile-modal'
 import { format } from 'date-fns'
 import { Heart, MessageCircle, Search, Plus, ChevronLeft, ChevronRight } from 'lucide-react'
 import { useTranslation } from '@/lib/i18n'
@@ -29,6 +31,12 @@ function HomeContent() {
   const [page, setPage] = useState(1)
   const [searchValue, setSearchValue] = useState(keyword || '')
   const pageSize = 10
+
+  /* 关注动态流视图 */
+  const [view, setView] = useState<'all' | 'feed'>('all')
+  const [feedPage, setFeedPage] = useState(1)
+  const feedPageSize = 10
+  const [profileUserId, setProfileUserId] = useState<string | null>(null)
 
   const { t } = useTranslation()
 
@@ -67,12 +75,20 @@ function HomeContent() {
       }),
   })
 
+  /* 关注动态流 */
+  const { data: feedData, isLoading: feedLoading } = useQuery({
+    queryKey: ['followFeed', feedPage],
+    queryFn: () => getFollowFeed({ page: feedPage, pageSize: feedPageSize }),
+    enabled: view === 'feed',
+  })
+
   /* 切换板块时重置页码 */
   useEffect(() => {
     setPage(1)
   }, [sectionId])
 
   const totalPages = postsData ? Math.ceil(postsData.total / pageSize) : 1
+  const feedTotalPages = feedData ? Math.ceil(feedData.total / feedPageSize) : 1
 
   return (
     <div className="flex min-h-screen flex-col">
@@ -114,6 +130,22 @@ function HomeContent() {
       <div className="border-b border-space-600 bg-space-800/50">
         <div className="mx-auto max-w-7xl px-4">
           <div className="flex gap-1 overflow-x-auto py-2 scrollbar-hide">
+            {/* 关注动态流入口（仅登录可见） */}
+            {isAuthenticated && (
+              <button
+                onClick={() => {
+                  setView('feed')
+                  setFeedPage(1)
+                }}
+                className={`shrink-0 rounded-lg px-4 py-2 text-sm transition-colors ${
+                  view === 'feed'
+                    ? 'bg-neon-blue/15 text-neon-blue border border-neon-blue/30'
+                    : 'text-star-dim hover:text-star-white hover:bg-space-700'
+                }`}
+              >
+                关注
+              </button>
+            )}
             <Link
               href="/"
               className={`shrink-0 rounded-lg px-4 py-2 text-sm transition-colors ${
@@ -145,7 +177,110 @@ function HomeContent() {
       <div className="mx-auto flex w-full max-w-7xl flex-1 gap-6 px-4 py-6">
         {/* 帖子列表 */}
         <main className="flex-1 space-y-4">
-          {isLoading ? (
+          {view === 'feed' ? (
+            <>
+              {feedLoading ? (
+                /* 骨架屏 */
+                Array.from({ length: 5 }).map((_, i) => (
+                  <Card key={i} glowColor="blue" className="space-y-3">
+                    <Skeleton className="h-5 w-3/4" />
+                    <div className="flex items-center gap-3">
+                      <Skeleton className="h-8 w-8 rounded-full" />
+                      <Skeleton className="h-4 w-20" />
+                    </div>
+                  </Card>
+                ))
+              ) : feedData?.items?.length === 0 ? (
+                <div className="py-20 text-center">
+                  <p className="text-star-dim">还没有关注动态，去关注喜欢的创作者吧</p>
+                </div>
+              ) : (
+                feedData?.items?.map((item) => (
+                  <Link key={`${item.type}-${item.id}`} href={item.type === 'post' ? `/post/${item.id}` : '/gallery'}>
+                    <Card glowColor="blue" className="group cursor-pointer transition-all hover:border-neon-blue/50 hover:shadow-lg hover:shadow-neon-blue/5">
+                      <div className="flex gap-4">
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-start gap-2">
+                            <Badge variant={item.type === 'post' ? 'blue' : 'purple'} className="shrink-0">
+                              {item.type === 'post' ? '帖子' : '画廊'}
+                            </Badge>
+                            <h3 className="text-base font-medium text-star-white group-hover:text-neon-blue transition-colors line-clamp-1">
+                              {item.title}
+                            </h3>
+                          </div>
+                          {/* 作者信息 */}
+                          <div className="mt-2 flex items-center gap-2">
+                            <button
+                              onClick={(e) => { e.preventDefault(); e.stopPropagation(); setProfileUserId(item.authorId) }}
+                              className="group flex items-center gap-2"
+                            >
+                              <Avatar src={item.authorAvatar} alt={item.authorNickname} size="sm" />
+                              <span className="text-sm text-star-dim group-hover:text-neon-blue transition-colors">
+                                {item.authorNickname}
+                              </span>
+                            </button>
+                            <span className="text-xs text-star-dim/60">
+                              {format(new Date(item.createdAt), 'MM-dd HH:mm')}
+                            </span>
+                          </div>
+                          {/* 内容摘要 */}
+                          {item.content && (
+                            <p className="mt-2 line-clamp-2 text-sm text-star-dim">{item.content}</p>
+                          )}
+                          {/* 互动数据 */}
+                          <div className="mt-3 flex items-center gap-4 text-sm text-star-dim">
+                            <span className="flex items-center gap-1">
+                              <Heart className="h-4 w-4" />
+                              {item.likesCount}
+                            </span>
+                            {item.commentsCount !== undefined && (
+                              <span className="flex items-center gap-1">
+                                <MessageCircle className="h-4 w-4" />
+                                {item.commentsCount}
+                              </span>
+                            )}
+                          </div>
+                        </div>
+                        {/* 缩略图 */}
+                        {item.thumbnailUrl && (
+                          <div className="hidden shrink-0 sm:block">
+                            <div className="h-24 w-24 overflow-hidden rounded-lg">
+                              <img src={item.thumbnailUrl} alt="" className="h-full w-full object-cover" />
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    </Card>
+                  </Link>
+                ))
+              )}
+
+              {/* 关注动态分页 */}
+              {feedTotalPages > 1 && (
+                <div className="flex items-center justify-center gap-2 pt-4">
+                  <button
+                    onClick={() => setFeedPage(Math.max(1, feedPage - 1))}
+                    disabled={feedPage <= 1}
+                    className="rounded-lg border border-space-600 bg-space-800 px-3 py-1.5 text-sm text-star-dim hover:text-star-white disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                  >
+                    <ChevronLeft className="h-4 w-4" />
+                  </button>
+                  <span className="text-sm text-star-dim">
+                    {feedPage} / {feedTotalPages}
+                  </span>
+                  <button
+                    onClick={() => setFeedPage(Math.min(feedTotalPages, feedPage + 1))}
+                    disabled={feedPage >= feedTotalPages}
+                    className="rounded-lg border border-space-600 bg-space-800 px-3 py-1.5 text-sm text-star-dim hover:text-star-white disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                  >
+                    <ChevronRight className="h-4 w-4" />
+                  </button>
+                </div>
+              )}
+            </>
+          ) : (
+            <>
+              {isLoading ? (
             /* 骨架屏 */
             Array.from({ length: 5 }).map((_, i) => (
               <Card key={i} glowColor="blue" className="space-y-3">
@@ -183,8 +318,15 @@ function HomeContent() {
                       </div>
                       {/* 作者信息 */}
                       <div className="mt-2 flex items-center gap-2">
-                        <Avatar src={post.authorAvatar} alt={post.authorNickname} size="sm" />
-                        <span className="text-sm text-star-dim">{post.authorNickname}</span>
+                        <button
+                          onClick={(e) => { e.preventDefault(); e.stopPropagation(); setProfileUserId(post.authorId) }}
+                          className="group flex items-center gap-2"
+                        >
+                          <Avatar src={post.authorAvatar} alt={post.authorNickname} size="sm" />
+                          <span className="text-sm text-star-dim group-hover:text-neon-blue transition-colors">
+                            {post.authorNickname}
+                          </span>
+                        </button>
                         <span className="text-xs text-star-dim/60">
                           {format(new Date(post.createdAt), 'MM-dd HH:mm')}
                         </span>
@@ -251,6 +393,8 @@ function HomeContent() {
               </button>
             </div>
           )}
+            </>
+          )}
         </main>
 
         {/* 右侧栏 */}
@@ -265,6 +409,11 @@ function HomeContent() {
         >
           <Plus className="h-6 w-6" />
         </Link>
+      )}
+
+      {/* 用户资料弹窗 */}
+      {profileUserId && (
+        <UserProfileModal userId={profileUserId} onClose={() => setProfileUserId(null)} />
       )}
 
       <Footer />

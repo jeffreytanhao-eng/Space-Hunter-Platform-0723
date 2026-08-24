@@ -4,7 +4,7 @@ import {
   BadRequestException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { Repository, In } from 'typeorm';
 import { Event } from '../../database/entities/event.entity';
 import { EventSignup } from '../../database/entities/event-signup.entity';
 import { AdminLog } from '../../database/entities/admin-log.entity';
@@ -33,13 +33,13 @@ export class EventsService {
     private readonly adminLogRepo: Repository<AdminLog>,
   ) {}
 
-  /** 活动列表（仅 approved） */
-  async findAll(query: QueryEventDto): Promise<PaginatedResult<Event>> {
+  /** 活动列表（仅 approved / ongoing） */
+  async findAll(query: QueryEventDto, userId?: string): Promise<PaginatedResult<Event>> {
     const { keyword, locationType, page = 1, pageSize = 20 } = query;
 
     const qb = this.eventRepo
       .createQueryBuilder('e')
-      .where('e.status = :status', { status: 'approved' });
+      .where('e.status IN (:...statuses)', { statuses: ['approved', 'ongoing'] });
 
     // 关键词搜索
     if (keyword) {
@@ -72,6 +72,18 @@ export class EventsService {
       });
     }
 
+    // 当前用户报名状态
+    if (userId && data.length > 0) {
+      const eventIds = data.map(e => e.id);
+      const signups = await this.signupRepo.find({
+        where: { userId, status: 'signed', eventId: In(eventIds) },
+      });
+      const signedIds = new Set(signups.map(s => s.eventId));
+      (data as any[]).forEach(event => {
+        (event as any).isSignedUp = signedIds.has(event.id);
+      });
+    }
+
     return {
       data,
       total,
@@ -82,13 +94,20 @@ export class EventsService {
   }
 
   /** 活动详情 */
-  async findById(id: string): Promise<Event> {
+  async findById(id: string, userId?: string): Promise<Event> {
     const event = await this.eventRepo.findOne({
       where: { id },
       relations: ['creator', 'signups', 'signups.user'],
     });
     if (!event) {
       throw new NotFoundException('活动不存在');
+    }
+    // 当前用户报名状态
+    if (userId) {
+      const signup = await this.signupRepo.findOne({
+        where: { eventId: id, userId, status: 'signed' },
+      });
+      (event as any).isSignedUp = !!signup;
     }
     return event;
   }
@@ -116,8 +135,8 @@ export class EventsService {
     if (!event) {
       throw new NotFoundException('活动不存在');
     }
-    if (event.status !== 'approved') {
-      throw new BadRequestException('活动未通过审核，无法报名');
+    if (event.status !== 'approved' && event.status !== 'ongoing') {
+      throw new BadRequestException('活动未开放报名');
     }
 
     // 检查是否已报名
@@ -194,6 +213,11 @@ export class EventsService {
         event.creator = userMap.get(event.creatorId) || null;
       });
     }
+
+    // 我的活动：用户必然已报名
+    (data as any[]).forEach(event => {
+      (event as any).isSignedUp = true;
+    });
 
     return {
       data,

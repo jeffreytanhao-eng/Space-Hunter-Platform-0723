@@ -18,7 +18,7 @@ import {
   ApiParam,
   ApiQuery,
 } from '@nestjs/swagger';
-import { Request, Response } from 'express';
+import { Response } from 'express';
 import { PostsService } from './posts.service';
 import { CreatePostDto } from './dto/create-post.dto';
 import { UpdatePostDto } from './dto/update-post.dto';
@@ -33,25 +33,29 @@ export class PostsController {
   constructor(private readonly postsService: PostsService) {}
 
   @Get()
+  @UseGuards(OptionalJwtAuthGuard)
   @ApiOperation({ summary: '帖子列表（分页、筛选、搜索、排序）' })
   async findAll(
     @Query() query: QueryPostDto,
-    @Req() req: Request,
+    @CurrentUser('id') userId: string | undefined,
+    @CurrentUser('role') userRole: string | undefined,
     @Res({ passthrough: true }) res: Response,
   ) {
     // ADR-008: 缓存策略 max-age=30, s-maxage=60
     res.set('Cache-Control', 'public, max-age=30, s-maxage=60');
 
-    const user = req.user as any;
-    const userRole = user?.role;
-    return this.postsService.findAll(query, userRole);
+    return this.postsService.findAll(query, userRole, userId);
   }
 
   @Get(':id')
+  @UseGuards(OptionalJwtAuthGuard)
   @ApiOperation({ summary: '帖子详情（含评论列表）' })
   @ApiParam({ name: 'id', description: '帖子 ID' })
-  async findById(@Param('id') id: string) {
-    return this.postsService.findById(id);
+  async findById(
+    @Param('id') id: string,
+    @CurrentUser('id') userId: string | undefined,
+  ) {
+    return this.postsService.findById(id, userId);
   }
 
   @Post()

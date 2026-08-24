@@ -1,6 +1,7 @@
 'use client'
 
 import { useState } from 'react'
+import { useRouter } from 'next/navigation'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { getEvents, signupEvent, cancelSignup, getMyEvents } from '@/services/events'
 import { Header } from '@/components/layout/header'
@@ -37,6 +38,7 @@ function StatusBadge({ status }: { status: string }) {
 /* 活动页 */
 export default function EventsPage() {
   const { t } = useTranslation()
+  const router = useRouter()
   const queryClient = useQueryClient()
   const { isAuthenticated } = useAuthStore()
 
@@ -60,14 +62,62 @@ export default function EventsPage() {
     enabled: activeTab === 'my' && isAuthenticated,
   })
 
-  /* 报名/取消报名 */
+  /* 报名/取消报名（乐观更新：按钮即时切换 + 人数即时变化） */
   const signupMutation = useMutation({
     mutationFn: signupEvent,
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['events'] }),
+    onMutate: async (eventId: string) => {
+      const key = ['events', page, keyword]
+      const prev = queryClient.getQueryData(key)
+      queryClient.setQueryData(key, (old: any) => {
+        if (!old) return old
+        return {
+          ...old,
+          items: (old.items || []).map((it: any) =>
+            it.id === eventId
+              ? { ...it, isSignedUp: true, currentParticipants: (it.currentParticipants ?? 0) + 1 }
+              : it
+          ),
+        }
+      })
+      return { prev }
+    },
+    onError: (_e: string, _v: string, ctx: any) => {
+      if (ctx?.prev) {
+        queryClient.setQueryData(['events', page, keyword], ctx.prev)
+      }
+    },
+    onSettled: () => {
+      queryClient.invalidateQueries({ queryKey: ['events'] })
+      queryClient.invalidateQueries({ queryKey: ['myEvents'] })
+    },
   })
   const cancelMutation = useMutation({
     mutationFn: cancelSignup,
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['events'] }),
+    onMutate: async (eventId: string) => {
+      const key = ['events', page, keyword]
+      const prev = queryClient.getQueryData(key)
+      queryClient.setQueryData(key, (old: any) => {
+        if (!old) return old
+        return {
+          ...old,
+          items: (old.items || []).map((it: any) =>
+            it.id === eventId
+              ? { ...it, isSignedUp: false, currentParticipants: Math.max(0, (it.currentParticipants ?? 0) - 1) }
+              : it
+          ),
+        }
+      })
+      return { prev }
+    },
+    onError: (_e: string, _v: string, ctx: any) => {
+      if (ctx?.prev) {
+        queryClient.setQueryData(['events', page, keyword], ctx.prev)
+      }
+    },
+    onSettled: () => {
+      queryClient.invalidateQueries({ queryKey: ['events'] })
+      queryClient.invalidateQueries({ queryKey: ['myEvents'] })
+    },
   })
 
   const handleSearch = (e: React.FormEvent) => {
@@ -162,7 +212,12 @@ export default function EventsPage() {
           ) : (
             <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
               {items.map((event) => (
-                <Card key={event.id} glowColor="blue" className="flex flex-col">
+                <Card
+                  key={event.id}
+                  glowColor="blue"
+                  className="group flex cursor-pointer flex-col transition-all hover:border-neon-blue/50 hover:shadow-lg hover:shadow-neon-blue/5"
+                  onClick={() => router.push(`/events/${event.id}`)}
+                >
                   {/* 官方标记 + 状态 */}
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-2">
@@ -180,7 +235,9 @@ export default function EventsPage() {
                   </div>
 
                   {/* 标题 */}
-                  <h3 className="mt-3 text-base font-medium text-star-white line-clamp-2">{event.title}</h3>
+                  <h3 className="mt-3 text-base font-medium text-star-white group-hover:text-neon-blue transition-colors line-clamp-2">
+                    {event.title}
+                  </h3>
 
                   {/* 信息 */}
                   <div className="mt-3 space-y-2 text-sm text-star-dim">
@@ -213,7 +270,7 @@ export default function EventsPage() {
                           size="sm"
                           className="w-full"
                           disabled={cancelMutation.isPending}
-                          onClick={() => cancelMutation.mutate(event.id)}
+                          onClick={(e) => { e.stopPropagation(); cancelMutation.mutate(event.id) }}
                         >
                           {cancelMutation.isPending ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <CheckCircle className="mr-2 h-4 w-4" />}
                           {t('events.signedUp')}
@@ -223,11 +280,11 @@ export default function EventsPage() {
                           variant="primary"
                           size="sm"
                           className="w-full"
-                          disabled={event.currentParticipants >= event.maxParticipants || signupMutation.isPending}
-                          onClick={() => signupMutation.mutate(event.id)}
+                          disabled={(event.maxParticipants > 0 && event.currentParticipants >= event.maxParticipants) || signupMutation.isPending}
+                          onClick={(e) => { e.stopPropagation(); signupMutation.mutate(event.id) }}
                         >
                           {signupMutation.isPending ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
-                          {event.currentParticipants >= event.maxParticipants ? t('events.full') : t('events.signup')}
+                          {event.maxParticipants > 0 && event.currentParticipants >= event.maxParticipants ? t('events.full') : t('events.signup')}
                         </Button>
                       )
                     ) : (

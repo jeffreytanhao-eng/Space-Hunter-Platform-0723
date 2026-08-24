@@ -15,6 +15,7 @@ interface BackendEvent {
   currentParticipants: number
   status: string
   isOfficial: boolean
+  isSignedUp?: boolean
   createdAt: string
   updatedAt: string
   creator?: {
@@ -46,7 +47,7 @@ function transformEvent(be: BackendEvent): EventItem {
     currentParticipants: be.currentParticipants,
     isOfficial: be.isOfficial,
     status: be.status as 'pending' | 'approved' | 'rejected' | 'ongoing' | 'ended',
-    isSignedUp: false,
+    isSignedUp: be.isSignedUp ?? false,
     authorId: be.creatorId,
     authorNickname: be.creator?.nickname || '',
     createdAt: be.createdAt,
@@ -86,7 +87,7 @@ export async function signupEvent(id: string) {
 
 /** 取消报名 */
 export async function cancelSignup(id: string) {
-  const { data } = await apiClient.post<{ success: boolean }>(`/events/${id}/cancel-signup`)
+  const { data } = await apiClient.delete<{ success: boolean }>(`/events/${id}/signup`)
   return data
 }
 

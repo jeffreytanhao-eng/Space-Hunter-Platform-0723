@@ -129,11 +129,22 @@ export class FollowsService {
     };
   }
 
-  /** 查询关注状态 */
-  async isFollowing(followerId: string, followingId: string): Promise<{ following: boolean }> {
+  /** 查询关注状态（是否已关注 + 粉丝/关注数） */
+  async isFollowing(
+    followerId: string,
+    followingId: string,
+  ): Promise<{ isFollowing: boolean; followersCount: number; followingCount: number }> {
     const existing = await this.followRepo.findOne({
       where: { followerId, followingId },
     });
-    return { following: !!existing };
+    const [followersCount, followingCount] = await Promise.all([
+      this.followRepo.count({ where: { followingId } }),
+      this.followRepo.count({ where: { followerId: followingId } }),
+    ]);
+    return {
+      isFollowing: !!existing,
+      followersCount,
+      followingCount,
+    };
   }
 }

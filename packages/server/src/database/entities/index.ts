@@ -9,6 +9,7 @@ export { EventSignup } from './event-signup.entity';
 export { PointsTransaction } from './points-transaction.entity';
 export { AdminLog } from './admin-log.entity';
 export { FitsAsset } from './fits-asset.entity';
+export { Device } from './device.entity';
 export { DeviceUpload } from './device-upload.entity';
 export { DeviceProcessingTask } from './device-processing-task.entity';
 export { CheckIn } from './check-in.entity';

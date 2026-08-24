@@ -14,6 +14,7 @@ import { Button } from '@/components/ui/button'
 import { Avatar } from '@/components/ui/avatar'
 import { Skeleton } from '@/components/ui/skeleton'
 import { useAuthStore } from '@/stores/auth-store'
+import { UserProfileModal } from '@/components/ui/user-profile-modal'
 import { format } from 'date-fns'
 import {
   Heart, MessageCircle, Download, Trash2, Edit3,
@@ -32,6 +33,7 @@ export default function PostDetailPage() {
   const [commentContent, setCommentContent] = useState('')
   const [commentPage, setCommentPage] = useState(1)
   const [lightboxIndex, setLightboxIndex] = useState<number | null>(null)
+  const [profileUserId, setProfileUserId] = useState<string | null>(null)
 
   /* 帖子详情 */
   const { data: post, isLoading } = useQuery({
@@ -45,18 +47,54 @@ export default function PostDetailPage() {
     queryFn: () => getComments(postId, { page: commentPage, pageSize: 20 }),
   })
 
-  /* 点赞 */
+  /* 点赞（乐观更新，与画廊一致：红心即时变化） */
   const likeMutation = useMutation({
     mutationFn: () => toggleLike(postId),
-    onSuccess: () => {
+    onMutate: async () => {
+      const key = ['post', postId]
+      const prev = queryClient.getQueryData(key)
+      queryClient.setQueryData(key, (old: any) => {
+        if (!old) return old
+        return {
+          ...old,
+          isLiked: !old.isLiked,
+          likesCount: (old.likesCount ?? 0) + (old.isLiked ? -1 : 1),
+        }
+      })
+      return { prev }
+    },
+    onError: (_e: string, _v: void, ctx: any) => {
+      if (ctx?.prev) {
+        queryClient.setQueryData(['post', postId], ctx.prev)
+      }
+    },
+    onSettled: () => {
       queryClient.invalidateQueries({ queryKey: ['post', postId] })
     },
   })
 
-  /* 收藏 */
+  /* 收藏（乐观更新：数字即时增加） */
   const favoriteMutation = useMutation({
     mutationFn: () => (post?.isFavorited ? removeFavorite('post', postId) : addFavorite('post', postId)),
-    onSuccess: () => {
+    onMutate: async () => {
+      const key = ['post', postId]
+      const prev = queryClient.getQueryData(key)
+      queryClient.setQueryData(key, (old: any) => {
+        if (!old) return old
+        return {
+          ...old,
+          isFavorited: !old.isFavorited,
+          favoriteCount: (old.favoriteCount ?? 0) + (old.isFavorited ? -1 : 1),
+        }
+      })
+      return { prev }
+    },
+    onError: (_e: string, _v: void, ctx: any) => {
+      if (ctx?.prev) {
+        queryClient.setQueryData(['post', postId], ctx.prev)
+      }
+    },
+    onSettled: () => {
       queryClient.invalidateQueries({ queryKey: ['post', postId] })
     },
   })
@@ -168,14 +206,21 @@ export default function PostDetailPage() {
 
           {/* 作者信息 */}
           <div className="mt-3 flex items-center gap-3">
-            <Avatar src={post.authorAvatar} alt={post.authorNickname} size="md" />
-            <div>
-              <p className="text-sm font-medium text-star-white">{post.authorNickname}</p>
-              <p className="text-xs text-star-dim">
-                {format(new Date(post.createdAt), 'yyyy-MM-dd HH:mm')}
-                {post.sectionName && ` · ${post.sectionName}`}
-              </p>
-            </div>
+            <button
+              onClick={() => setProfileUserId(post.authorId)}
+              className="flex items-center gap-3 group"
+            >
+              <Avatar src={post.authorAvatar} alt={post.authorNickname} size="md" />
+              <div className="text-left">
+                <p className="text-sm font-medium text-star-white group-hover:text-neon-blue transition-colors">
+                  {post.authorNickname}
+                </p>
+                <p className="text-xs text-star-dim">
+                  {format(new Date(post.createdAt), 'yyyy-MM-dd HH:mm')}
+                  {post.sectionName && ` · ${post.sectionName}`}
+                </p>
+              </div>
+            </button>
           </div>
 
           {/* 标签 */}
@@ -446,6 +491,16 @@ export default function PostDetailPage() {
             onClick={(e) => e.stopPropagation()}
           />
         </div>
+      )}
+
+      {/* 用户资料弹窗 */}
+      {profileUserId && (
+        <UserProfileModal
+          userId={profileUserId}
+          nickname={post.authorNickname}
+          avatar={post.authorAvatar}
+          onClose={() => setProfileUserId(null)}
+        />
       )}
 
       <Footer />

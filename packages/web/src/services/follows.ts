@@ -11,7 +11,7 @@ export async function followUser(userId: string) {
 
 /** 取消关注 */
 export async function unfollowUser(userId: string) {
-  const { data } = await apiClient.post<{ success: boolean }>(`/users/${userId}/unfollow`)
+  const { data } = await apiClient.delete<{ success: boolean }>(`/users/${userId}/follow`)
   return data
 }
 

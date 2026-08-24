@@ -25,6 +25,7 @@ interface BackendPost {
     id: string
     name: string
   }
+  isLiked?: boolean
   isFavorited?: boolean
   favoriteCount?: number
 }
@@ -63,6 +64,7 @@ export function transformPost(bp: BackendPost): Post {
     })),
     likesCount: bp.likeCount,
     commentsCount: bp.commentCount,
+    isLiked: bp.isLiked,
     isFavorited: bp.isFavorited,
     favoriteCount: bp.favoriteCount,
     createdAt: bp.createdAt,

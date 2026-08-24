@@ -1,4 +1,4 @@
-﻿﻿﻿﻿﻿﻿﻿﻿﻿import {
+﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿import {
   Entity,
   PrimaryGeneratedColumn,
   Column,
@@ -9,6 +9,7 @@
 } from 'typeorm';
 import { User } from './user.entity';
 import { DeviceProcessingTask } from './device-processing-task.entity';
+import { Device } from './device.entity';
 
 /** 设备上传表（设备模块预留，Phase 0 不创建 devices 表） */
 @Entity('device_uploads')
@@ -19,6 +20,11 @@ export class DeviceUpload {
   /** 预留设备 ID */
   @Column({ type: 'bigint', nullable: true, name: 'device_id' })
   deviceId: string | null;
+
+  /** 所属设备（Task D1 建表后启用外键） */
+  @ManyToOne(() => Device, (device) => device.uploads)
+  @JoinColumn({ name: 'device_id' })
+  device: Device | null;
 
   @Column({ type: 'bigint', name: 'user_id' })
   userId: string;

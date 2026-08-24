@@ -46,7 +46,7 @@ export class PostsService {
   ) {}
 
   /** 分页查询帖子列表 */
-  async findAll(query: QueryPostDto, userRole?: string): Promise<PaginatedResult<Post>> {
+  async findAll(query: QueryPostDto, userRole?: string, userId?: string): Promise<PaginatedResult<Post>> {
     const {
       sectionId,
       tags,
@@ -113,6 +113,43 @@ export class PostsService {
       post.section = sectionMap.get(post.sectionId) || null;
     });
 
+    // 收藏计数 + 当前用户的点赞/收藏状态
+    if (data.length > 0) {
+      const postIds = data.map(p => p.id);
+      const favCountRows = await this.favoriteRepo
+        .createQueryBuilder('f')
+        .select('f.target_id', 'targetId')
+        .addSelect('COUNT(*)', 'cnt')
+        .where('f.target_type = :tt', { tt: 'post' })
+        .andWhere('f.target_id IN (:...ids)', { ids: postIds })
+        .groupBy('f.target_id')
+        .getRawMany();
+      const favCountMap = new Map(favCountRows.map(r => [String(r.targetId), Number(r.cnt)]));
+
+      let likedIds = new Set<string>();
+      let favoritedIds = new Set<string>();
+      if (userId) {
+        const [likeTxs, favs] = await Promise.all([
+          this.pointsTxRepo.find({
+            where: { idempotencyKey: In(postIds.map(pid => `like:${userId}:${pid}`)) },
+          }),
+          this.favoriteRepo.find({
+            where: { userId, targetType: 'post', targetId: In(postIds) },
+          }),
+        ]);
+        likedIds = new Set(likeTxs.map(tx => tx.idempotencyKey.split(':').pop() || ''));
+        favoritedIds = new Set(favs.map(f => f.targetId));
+      }
+
+      (data as any[]).forEach(post => {
+        (post as any).favoriteCount = favCountMap.get(String(post.id)) || 0;
+        if (userId) {
+          (post as any).isLiked = likedIds.has(String(post.id));
+          (post as any).isFavorited = favoritedIds.has(String(post.id));
+        }
+      });
+    }
+
     return {
       data,
       total,
@@ -152,13 +189,24 @@ export class PostsService {
     (post as any).section = section || null;
     (post as any).comments = comments;
 
-    // 当前用户是否已收藏（可选）
+    // 当前用户是否已点赞/收藏（可选）
     if (userId) {
-      const fav = await this.favoriteRepo.findOne({
-        where: { userId, targetType: 'post', targetId: id },
-      });
+      const [fav, likeTx] = await Promise.all([
+        this.favoriteRepo.findOne({
+          where: { userId, targetType: 'post', targetId: id },
+        }),
+        this.pointsTxRepo.findOne({
+          where: { idempotencyKey: `like:${userId}:${id}` },
+        }),
+      ]);
       (post as any).isFavorited = !!fav;
+      (post as any).isLiked = !!likeTx;
     }
+
+    // 收藏计数
+    (post as any).favoriteCount = await this.favoriteRepo.count({
+      where: { targetType: 'post', targetId: id },
+    });
 
     return post;
   }
